@@ -62,14 +62,13 @@ const LandingPage = () => {
       <section id="about" className="about">
         <h2>About Us</h2>
         <p>
-          At Bay Area Paws, we get it—your pet isn’t just a pet; they’re family. That’s why we go above and beyond to provide the kind of care that keeps them happy, healthy, and totally pampered. Our expert team knows what it takes to cater to the most discerning pets (and their humans), delivering top-tier service with a touch of Bay Area charm.
-        </p>
+        At Ari's Dog Services, we get it—your pet isn’t just a pet; they’re family. That’s why we go above and beyond to provide the kind of care that keeps them happy, healthy, and totally pampered. Our expert team knows what it takes to cater to the most discerning pets (and their humans), delivering top-tier service with a personal touch and plenty of tail wags.</p>
       </section>
 
       <footer className="footer" id="contact">
-        <p>&copy; {new Date().getFullYear()} Bay Area Paws. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Ari's Dog Services. All rights reserved.</p>
         <p>
-          <a href="mailto:info@bayareapaws.com">info@bayareapaws.com</a>
+          <a href="mailto:info@arisdogs.com">info@arisdogs.com</a>
         </p>
         <div className="staff-login-container">
           <Link to="/staff" className="staff-login">
