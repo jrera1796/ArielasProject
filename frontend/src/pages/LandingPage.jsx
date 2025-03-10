@@ -14,7 +14,7 @@ const LandingPage = () => {
     <div className="landing-page">
       <header className="hero">
         <nav className="navbar">
-          <div className="logo">Bay Area Paws</div>
+          <div className="logo">Ari's Dog Services</div>
           <div className="nav-right">
             <ul className="nav-links">
               <li><a href="#services">Services</a></li>
