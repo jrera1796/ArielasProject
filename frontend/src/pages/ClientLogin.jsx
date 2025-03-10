@@ -34,7 +34,7 @@ const ClientLogin = () => {
         return;
       }
       try {
-        const response = await fetch('http://localhost:3001/register', {
+        const response = await fetch('/api/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, phone, password }),
@@ -56,7 +56,7 @@ const ClientLogin = () => {
       }
     } else {
       try {
-        const response = await fetch('http://localhost:3001/login', {
+        const response = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),

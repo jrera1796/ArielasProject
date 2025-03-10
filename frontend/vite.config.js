@@ -6,11 +6,11 @@ export default defineConfig({
   server: {
     host: true,
     allowedHosts: [
-      "98e0-2603-8080-2701-a9b-5c5d-803b-5e3-ec0c.ngrok-free.app"
+      "ari.qapital-impressions.com"
     ],
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }
