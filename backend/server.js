@@ -9,14 +9,18 @@ require('dotenv').config();
 const app = express();
 
 // Enable CORS and JSON body parsing
-app.use(cors());
+app.use(cors({
+  origin: 'https://ari.qapital-impressions.com',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // PostgreSQL connection pool configuration
 const pool = new Pool({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
-  database: process.env.DB_NAME, 
+  database: process.env.DB_NAME,
   password: process.env.DB_PASS,
   port: process.env.DB_PORT,
   ssl: false
@@ -24,7 +28,7 @@ const pool = new Pool({
 console.log('Connecting to DB:', process.env.DB_NAME);
 
 // (Optional) Test endpoint to verify database connection
-app.get('/test', async (req, res) => {
+app.get('/api/test', async (req, res) => {
   try {
     const result = await pool.query('SELECT NOW()');
     res.json({ success: true, data: result.rows[0] });
@@ -38,7 +42,7 @@ app.get('/test', async (req, res) => {
    ------------------------------------- */
 
 // POST /register - Registers a new client
-app.post('/register', async (req, res) => {
+app.post('/api/register', async (req, res) => {
   const { name, email, phone, password } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Name, email, and password are required.' });
@@ -66,7 +70,7 @@ app.post('/register', async (req, res) => {
 });
 
 // POST /login - Authenticates a client and returns user info and a JWT token
-app.post('/login', async (req, res) => {
+app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required.' });
@@ -96,7 +100,7 @@ app.post('/login', async (req, res) => {
    ------------------------------------- */
 
 // POST /staffregister - Registers a new staff member (including phone)
-app.post('/staffregister', async (req, res) => {
+app.post('/api/staffregister', async (req, res) => {
   const { name, email, phone, password } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Name, email, and password are required.' });
@@ -124,7 +128,7 @@ app.post('/staffregister', async (req, res) => {
 });
 
 // POST /stafflogin - Authenticates a staff user and returns user info and a JWT token
-app.post('/stafflogin', async (req, res) => {
+app.post('/api/stafflogin', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required.' });
@@ -152,5 +156,6 @@ app.post('/stafflogin', async (req, res) => {
 /* -------------------------------------
    START THE SERVER
    ------------------------------------- */
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, '0.0.0.0', () => console.log(`Backend running on port ${PORT}`));
+
