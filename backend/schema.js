@@ -10,8 +10,6 @@ const recreateTables = async () => {
     await pool.query(`DROP TABLE IF EXISTS staff_availability CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS clients CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS staff CASCADE;`);
-    // Drop the old users table (if it exists)
-    await pool.query(`DROP TABLE IF EXISTS users CASCADE;`);
 
     // Create new tables
     await pool.query(`
@@ -19,6 +17,7 @@ const recreateTables = async () => {
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         email VARCHAR(150) UNIQUE NOT NULL,
+        phone VARCHAR(20),
         password VARCHAR(255) NOT NULL,  -- hashed password for staff login
         role VARCHAR(20) CHECK (role IN ('admin', 'staff')) DEFAULT 'staff',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
