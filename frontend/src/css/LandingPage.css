@@ -1,0 +1,184 @@
+/* Global Reset & Box-Sizing */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  font-family: Arial, sans-serif;
+}
+
+/* Landing Page Styles */
+.landing-page {
+  min-height: 100vh;
+  background: url("https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTA0L2pvYjE4MjktYmFja2dyb3VuZC1ib29tLTA0Zy5qcGc.jpg") no-repeat center center;
+  background-size: cover;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+}
+
+/* Hero Section */
+.hero {
+  padding: 80px 20px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 15px;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-links a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.hero-content h1 {
+  font-size: 3em;
+  margin-bottom: 0.5em;
+}
+
+.cta-button {
+  padding: 10px 20px;
+  font-size: 1em;
+  background-color: #ff9800;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.cta-button:hover {
+  background-color: #e68a00;
+}
+
+/* Content Sections */
+.services,
+.about {
+  padding: 40px 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.about{
+  background: rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.services h2 {
+  margin-bottom: 20px;
+}
+
+/* Service Cards */
+.service-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.service-card {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  flex: 1 1 250px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  color: #333;
+  text-align: center;
+}
+
+/* Footer */
+.footer {
+  background: #333;
+  color: #fff;
+  padding: 20px;
+  width: 100%;
+  text-align: center;
+}
+
+.footer a {
+  color: #ff9800;
+  text-decoration: none;
+}
+
+/* Style for the user login/sign up link */
+.user-login {
+  background-color: #ff9800;
+  padding: 8px 16px;
+  border-radius: 4px;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+  margin-left: 20px;
+}
+
+/* On hover for user login */
+.user-login:hover {
+  background-color: #e68a00;
+}
+
+/* Container to hold the nav-links and user-login on the right */
+.nav-right {
+  display: flex;
+  align-items: center;
+}
+
+/* Style for the staff login link in the footer */
+.staff-login-container {
+  margin-top: 20px;
+}
+
+.staff-login {
+  color: #ff9800;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.staff-login:hover {
+  text-decoration: underline;
+}
+
+/* Media Queries */
+
+/* Mobile Styles (max-width: 768px) */
+@media (max-width: 768px) {
+  .hero {
+    padding: 60px 10px;
+  }
+
+  .hero-content h1 {
+    font-size: 2.5em;
+  }
+
+  .cta-button {
+    padding: 8px 16px;
+    font-size: 0.9em;
+  }
+
+  .services, .about {
+    padding: 20px 10px;
+  }
+
+  .service-card {
+    flex: 1 1 100%;
+  }
+}
+
+/* Desktop Styles (min-width: 769px) */
+/* Default styling here already serves desktop, but you can add adjustments if needed */

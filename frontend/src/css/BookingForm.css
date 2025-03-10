@@ -1,0 +1,99 @@
+/* src/BookingForm.css */
+
+.booking-page {
+  min-height: 100vh;
+  background: url("https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTAzL2pvYjE1NzEtcmVtaXgtMTAtYy5qcGc.jpg") no-repeat center center;
+  background-size: cover;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  font-family: Arial, sans-serif;
+}
+
+.booking-container {
+  background-color: rgba(255, 255, 255, 0.85);
+  border-radius: 8px;
+  max-width: 600px;
+  width: 100%;
+  padding: 2rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.booking-form,
+.payment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.booking-form h2,
+.payment-form h2 {
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 1.75rem;
+  color: #333;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+label {
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+input[type="email"],
+input[type="date"],
+input[type="time"] {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.booking-submit-btn,
+.payment-submit-btn {
+  background-color: #ff9800;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  align-self: center;
+}
+
+.booking-submit-btn:hover,
+.payment-submit-btn:hover {
+  background-color: #e68a00;
+}
+
+.card-element-wrapper {
+  background-color: #fff;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.error-msg {
+  color: red;
+  text-align: center;
+}
+
+.success-msg {
+  margin-top: 1rem;
+  color: green;
+  font-weight: 600;
+  text-align: center;
+}

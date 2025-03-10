@@ -1,0 +1,126 @@
+/* src/css/StaffDashboard.css */
+
+/* Mobile-first styling for staff dashboard layout */
+.staff-dashboard {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background-color: #f3f4f6;
+}
+
+/* Header styles */
+.top-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fff;
+  padding: 1rem;
+}
+
+.header-left h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.header-left p {
+  margin: 0.25rem 0 0;
+  color: #666;
+}
+
+/* Burger menu styles */
+.header-right {
+  position: relative;
+}
+
+.burger-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.dropdown-menu a {
+  padding: 0.75rem 1rem;
+  text-decoration: none;
+  color: #333;
+  border-bottom: 1px solid #eee;
+}
+
+.dropdown-menu a:last-child {
+  border-bottom: none;
+}
+
+.dropdown-menu a:hover {
+  background-color: #f3f3f3;
+}
+
+/* Main content */
+.dashboard-main {
+  flex: 1;
+  padding: 1rem;
+}
+
+/* Bottom navigation */
+.bottom-nav {
+  background-color: #fff;
+  border-top: 1px solid #ddd;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+}
+
+.bottom-nav ul {
+  list-style: none;
+  display: flex;
+  justify-content: space-around;
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+.bottom-nav li {
+  text-align: center;
+}
+
+.bottom-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.nav-icon {
+  font-size: 1.2rem;
+  margin-bottom: 0.25rem;
+}
+
+.nav-label {
+  font-size: 0.8rem;
+}
+
+/* Desktop enhancements */
+@media (min-width: 768px) {
+  .staff-dashboard {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  .bottom-nav {
+    max-width: 400px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
