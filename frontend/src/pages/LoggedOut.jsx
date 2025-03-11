@@ -1,14 +1,15 @@
-// src/pages/LoggedOut.jsx
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import '../css/LoggedOut.css';
 
 const LoggedOut = () => {
+  const { logout } = useAuth();
+
   useEffect(() => {
-    // Clear authentication data
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('authUser');
-  }, []);
+    // Call the logout method from the auth context
+    logout();
+  }, [logout]);
 
   return (
     <div className="logged-out-container">
