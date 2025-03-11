@@ -45,16 +45,16 @@ const LandingPage = () => {
         <h2>Our Services</h2>
         <div className="service-cards">
           <div className="service-card">
-            <h3>Dog Walking</h3>
-            <p>Daily walks to keep your dog happy and healthy.</p>
+            <h3>Pack Walks</h3>
+            <p>Enjoy group walks that foster socialization and exercise for your dog.</p>
           </div>
           <div className="service-card">
-            <h3>Boarding</h3>
-            <p>Comfortable stays for your pet when you're away.</p>
+            <h3>Private Lessons/Training</h3>
+            <p>One-on-one training sessions to enhance your pet’s skills and behavior.</p>
           </div>
           <div className="service-card">
-            <h3>Pet Care</h3>
-            <p>Personalized care plans to suit your pet's needs.</p>
+            <h3>Sitting</h3>
+            <p>Personalized pet sitting services to keep your dog safe and comfortable at home.</p>
           </div>
         </div>
       </section>
@@ -62,7 +62,8 @@ const LandingPage = () => {
       <section id="about" className="about">
         <h2>About Us</h2>
         <p>
-        At Ari's Dog Services, we get it—your pet isn’t just a pet; they’re family. That’s why we go above and beyond to provide the kind of care that keeps them happy, healthy, and totally pampered. Our expert team knows what it takes to cater to the most discerning pets (and their humans), delivering top-tier service with a personal touch and plenty of tail wags.</p>
+          At Ari's Dog Services, we get it—your pet isn’t just a pet; they’re family. That’s why we go above and beyond to provide the kind of care that keeps them happy, healthy, and totally pampered. Our expert team knows what it takes to cater to the most discerning pets (and their humans), delivering top-tier service with a personal touch and plenty of tail wags.
+        </p>
       </section>
 
       <footer className="footer" id="contact">
