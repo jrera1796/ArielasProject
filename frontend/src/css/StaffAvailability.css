@@ -1,0 +1,70 @@
+/* src/css/StaffAvailability.css */
+
+.availability-container {
+  padding: 1rem;
+  font-family: Arial, sans-serif;
+  padding-bottom: 4rem;
+}
+
+.week-title {
+  margin-bottom: 0.25rem;
+}
+
+.week-range {
+  margin-bottom: 1rem;
+  color: #666;
+}
+
+/* Each day is a row with a top bar (day + date) and a list of bookings below */
+.day-row {
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 0.5rem;
+}
+
+/* The top row: day name on the left, date on the right */
+.day-header {
+  background-color: #d0d0d0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.day-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.day-date {
+  font-size: 0.9rem;
+  color: #000000;
+}
+
+.booking-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+}
+
+.booking-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.5rem;
+}
+
+.booking-time {
+  font-weight: bold;
+  color: #333;
+}
+
+.booking-details {
+  color: #555;
+  margin-left: 0.5rem;
+}
+
+.no-bookings {
+  color: #999;
+  font-style: italic;
+  margin-left: 0.5rem;
+}
