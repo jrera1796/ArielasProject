@@ -14,7 +14,7 @@ const LandingPage = () => {
     <div className="landing-page">
       <header className="hero">
         <nav className="navbar">
-          <div className="logo">Ari's Dog Services</div>
+          <div className="logo">SF Tails</div>
           <div className="nav-right">
             <ul className="nav-links">
               <li><a href="#services">Services</a></li>
@@ -62,14 +62,14 @@ const LandingPage = () => {
       <section id="about" className="about">
         <h2>About Us</h2>
         <p>
-          At Ari's Dog Services, we get it—your pet isn’t just a pet; they’re family. That’s why we go above and beyond to provide the kind of care that keeps them happy, healthy, and totally pampered. Our expert team knows what it takes to cater to the most discerning pets (and their humans), delivering top-tier service with a personal touch and plenty of tail wags.
+          At SF Tails, we get it—your pet isn’t just a pet; they’re family. That’s why we go above and beyond to provide the kind of care that keeps them happy, healthy, and totally pampered. Our expert team knows what it takes to cater to the most discerning pets (and their humans), delivering top-tier service with a personal touch and plenty of tail wags.
         </p>
       </section>
 
       <footer className="footer" id="contact">
-        <p>&copy; {new Date().getFullYear()} Ari's Dog Services. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} SF Tails. All rights reserved.</p>
         <p>
-          <a href="mailto:info@arisdogs.com">info@arisdogs.com</a>
+          <a href="mailto:info@arisdogs.com">info@sftails.com</a>
         </p>
         <div className="staff-login-container">
           <Link to="/staff" className="staff-login">

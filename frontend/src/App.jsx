@@ -29,11 +29,11 @@ function App() {
 
   useEffect(() => {
     if (location.pathname.startsWith("/staff")) {
-      document.title = "Staff Dashboard - Ari's Dog Services";
+      document.title = "Staff Dashboard - SF Tails";
     } else if (location.pathname.startsWith("/client")) {
-      document.title = "Client Dashboard - Ari's Dog Services";
+      document.title = "Client Dashboard - SF Tails";
     } else {
-      document.title = "Ari's Dog Services";
+      document.title = "SF Tails";
     }
   }, [location]);
 
