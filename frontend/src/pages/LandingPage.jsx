@@ -73,7 +73,7 @@ const LandingPage = () => {
         </p>
         <div className="staff-login-container">
           <Link to="/staff" className="staff-login">
-            Staff Login
+            Admin Login
           </Link>
         </div>
       </footer>
