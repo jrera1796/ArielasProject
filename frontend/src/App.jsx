@@ -22,6 +22,7 @@ import ClientMessages from "./pages/ClientMessages";
 import ClientProfile from "./pages/ClientProfile";
 import ClientSettings from "./pages/ClientSettings";
 import ClientNotifications from "./pages/ClientNotifications";
+import ManagePets from "./pages/ManagePets";  // Added route component
 import "./css/App.css";
 
 function App() {
@@ -62,6 +63,7 @@ function App() {
         <Route path="profile" element={<ClientProfile />} />
         <Route path="settings" element={<ClientSettings />} />
         <Route path="notifications" element={<ClientNotifications />} />
+        <Route path="manage-pets" element={<ManagePets />} />
       </Route>
     </Routes>
   );
