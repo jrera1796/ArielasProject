@@ -1,0 +1,68 @@
+.manage-pets-container {
+  padding: 1rem;
+  font-family: Arial, sans-serif;
+}
+
+.error-msg {
+  color: red;
+  margin-bottom: 1rem;
+}
+
+.pet-form {
+  border: 1px solid #ddd;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  background-color: #f7f7f7;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.75rem;
+}
+
+.form-group label {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.pet-list {
+  list-style: none;
+  padding: 0;
+}
+
+.pet-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  border-radius: 6px;
+  background-color: #fff;
+}
+
+.pet-info {
+  flex: 1;
+}
+
+.pet-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pet-actions button {
+  background-color: #3498db;
+  border: none;
+  color: #fff;
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.pet-actions button:hover {
+  background-color: #2980b9;
+}

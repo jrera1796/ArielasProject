@@ -1,12 +1,13 @@
 // src/pages/ClientDashboardLayout.jsx
 import React, { useState } from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../css/ClientDashboard.css';
 
 const ClientDashboardLayout = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useAuth(); // Get the logged-in user's data
+  const location = useLocation(); // Access the current route location
 
   // Extract only the first name from the full name (assumes names are space-separated)
   const firstName = user && user.name ? user.name.split(" ")[0] : '';
@@ -44,22 +45,23 @@ const ClientDashboardLayout = () => {
         </div>
       </header>
 
-      {/* Quick Actions Section */}
-      <section className="quick-actions">
-        <div className="action-card">
-          <Link to="/client/manage-pets">
-            <div className="action-icon">🐶</div>
-            <div className="action-title">Manage Pets</div>
-          </Link>
-        </div>
-        <div className="action-card">
-          <Link to="/client/bookings/new">
-            <div className="action-icon">🗓️</div>
-            <div className="action-title">Submit New Booking</div>
-          </Link>
-        </div>
-        {/* Add more action cards as needed */}
-      </section>
+      {/* Only show quick actions on the /client route, not sub-routes */}
+      {location.pathname === '/client' && (
+        <section className="quick-actions">
+          <div className="action-card">
+            <Link to="/client/manage-pets">
+              <div className="action-icon">🐶</div>
+              <div className="action-title">Manage Pets</div>
+            </Link>
+          </div>
+          <div className="action-card">
+            <Link to="/client/bookings/new">
+              <div className="action-icon">🗓️</div>
+              <div className="action-title">Submit New Booking</div>
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* Main Content */}
       <main className="client-main">

@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -27,6 +26,19 @@ const pool = new Pool({
 });
 console.log('Connecting to DB:', process.env.DB_NAME);
 
+// JWT authentication middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'No token provided' });
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Invalid token' });
+    req.user = user;
+    next();
+  });
+};
+
 // (Optional) Test endpoint to verify database connection
 app.get('/api/test', async (req, res) => {
   try {
@@ -41,7 +53,7 @@ app.get('/api/test', async (req, res) => {
    CLIENT ENDPOINTS
    ------------------------------------- */
 
-// POST /register - Registers a new client
+// POST /api/register - Registers a new client
 app.post('/api/register', async (req, res) => {
   const { name, email, phone, password } = req.body;
   if (!name || !email || !password) {
@@ -69,7 +81,7 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// POST /login - Authenticates a client and returns user info and a JWT token
+// POST /api/login - Authenticates a client and returns user info and a JWT token
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -99,7 +111,7 @@ app.post('/api/login', async (req, res) => {
    STAFF ENDPOINTS
    ------------------------------------- */
 
-// POST /staffregister - Registers a new staff member (including phone)
+// POST /api/staffregister - Registers a new staff member (including phone)
 app.post('/api/staffregister', async (req, res) => {
   const { name, email, phone, password } = req.body;
   if (!name || !email || !password) {
@@ -127,7 +139,7 @@ app.post('/api/staffregister', async (req, res) => {
   }
 });
 
-// POST /stafflogin - Authenticates a staff user and returns user info and a JWT token
+// POST /api/stafflogin - Authenticates a staff user and returns user info and a JWT token
 app.post('/api/stafflogin', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -154,8 +166,94 @@ app.post('/api/stafflogin', async (req, res) => {
 });
 
 /* -------------------------------------
+   PETS ENDPOINTS (For Client Pet Management)
+   ------------------------------------- */
+
+// GET /api/pets - Get all pets for the authenticated client
+app.get('/api/pets', authenticateToken, async (req, res) => {
+  try {
+    const clientId = req.user.id;
+    const result = await pool.query('SELECT * FROM pets WHERE client_id = $1', [clientId]);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/pets - Add a new pet for the authenticated client
+app.post('/api/pets', authenticateToken, async (req, res) => {
+  const { pet_name, breed, size, notes } = req.body;
+  try {
+    const clientId = req.user.id;
+    const result = await pool.query(
+      `INSERT INTO pets (client_id, pet_name, breed, size, notes)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [clientId, pet_name, breed, size, notes]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/pets/:petId - Update a pet's details (only if it belongs to the authenticated client)
+app.put('/api/pets/:petId', authenticateToken, async (req, res) => {
+  const { petId } = req.params;
+  const { pet_name, breed, size, notes } = req.body;
+  try {
+    const clientId = req.user.id;
+    // Check if the pet belongs to the client
+    const check = await pool.query('SELECT id FROM pets WHERE id = $1 AND client_id = $2', [petId, clientId]);
+    if (check.rows.length === 0) {
+      return res.status(403).json({ error: 'Not authorized to update this pet.' });
+    }
+    const result = await pool.query(
+      `UPDATE pets 
+       SET pet_name = $1, breed = $2, size = $3, notes = $4 
+       WHERE id = $5 
+       RETURNING *`,
+      [pet_name, breed, size, notes, petId]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/pets/:petId - Delete a pet (only if it belongs to the authenticated client)
+app.delete('/api/pets/:petId', authenticateToken, async (req, res) => {
+  const { petId } = req.params;
+  try {
+    const clientId = req.user.id;
+    // Check if the pet belongs to the client
+    const check = await pool.query('SELECT id FROM pets WHERE id = $1 AND client_id = $2', [petId, clientId]);
+    if (check.rows.length === 0) {
+      return res.status(403).json({ error: 'Not authorized to delete this pet.' });
+    }
+    await pool.query('DELETE FROM pets WHERE id = $1', [petId]);
+    res.json({ message: 'Pet deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* -------------------------------------
    START THE SERVER
    ------------------------------------- */
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Backend running on port ${PORT}`));
 
+/* -------------------------------------
+   JWT Authentication Middleware
+   ------------------------------------- */
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'No token provided' });
+  
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Invalid token' });
+    req.user = user;
+    next();
+  });
+}
