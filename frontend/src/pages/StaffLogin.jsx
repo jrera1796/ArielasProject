@@ -42,6 +42,9 @@ const StaffLogin = () => {
 
   return (
     <div className="staff-login-container">
+      <Link to="/">
+        <img className="logo" src="/icons/SFTailsLogo.png" alt="SF Tails Logo" />
+      </Link>
       <h2>Staff Login</h2>
       <form className="staff-login-form" onSubmit={handleSubmit}>
         <div className="form-group">

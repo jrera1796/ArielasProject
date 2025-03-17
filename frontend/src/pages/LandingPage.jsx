@@ -14,7 +14,9 @@ const LandingPage = () => {
     <div className="landing-page">
       <header className="hero">
         <nav className="navbar">
-          <div className="logo">SF Tails</div>
+          <Link to="/">
+            <img className="logo" src="/icons/SFTailsLogo.png" alt="SF Tails Logo" />
+          </Link>
           <div className="nav-right">
             <ul className="nav-links">
               <li><a href="#services">Services</a></li>

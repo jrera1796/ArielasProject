@@ -1,6 +1,6 @@
 // src/pages/ClientLogin.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../css/ClientLogin.css';
 
@@ -81,6 +81,9 @@ const ClientLogin = () => {
 
   return (
     <div className="client-login-container">
+      <Link to="/">
+        <img className="logo" src="/icons/SFTailsLogo.png" alt="SF Tails Logo" />
+      </Link>
       <h2>{isSignUp ? 'Client Sign Up' : 'Client Login'}</h2>
       <form className="client-login-form" onSubmit={handleSubmit}>
         {isSignUp && (

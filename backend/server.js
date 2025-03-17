@@ -26,6 +26,19 @@ const pool = new Pool({
 });
 console.log('Connecting to DB:', process.env.DB_NAME);
 
+// JWT authentication middleware
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'No token provided' });
+  
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Invalid token' });
+    req.user = user;
+    next();
+  });
+}
+
 // (Optional) Test endpoint to verify database connection
 app.get('/api/test', async (req, res) => {
   try {
@@ -38,7 +51,7 @@ app.get('/api/test', async (req, res) => {
 
 /* -------------------------------------
    CLIENT ENDPOINTS
-   ------------------------------------- */
+-------------------------------------- */
 
 // POST /api/register - Registers a new client
 app.post('/api/register', async (req, res) => {
@@ -47,12 +60,10 @@ app.post('/api/register', async (req, res) => {
     return res.status(400).json({ error: 'Name, email, and password are required.' });
   }
   try {
-    // Check if a client with this email already exists
     const existing = await pool.query('SELECT * FROM clients WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
       return res.status(400).json({ error: 'A client with that email already exists.' });
     }
-    // Hash the password before storing it
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await pool.query(
       `INSERT INTO clients (name, email, phone, password) 
@@ -60,7 +71,6 @@ app.post('/api/register', async (req, res) => {
       [name, email, phone || null, hashedPassword]
     );
     const user = result.rows[0];
-    // Sign a JWT token for client authentication
     const token = jwt.sign({ id: user.id, role: 'client' }, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.status(201).json({ message: 'Registration successful', user, token });
   } catch (err) {
@@ -84,9 +94,7 @@ app.post('/api/login', async (req, res) => {
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid credentials.' });
     }
-    // Sign a JWT token for client authentication
     const token = jwt.sign({ id: user.id, role: 'client' }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    // Remove password before sending user object
     delete user.password;
     res.json({ message: 'Login successful', user, token });
   } catch (err) {
@@ -96,21 +104,19 @@ app.post('/api/login', async (req, res) => {
 
 /* -------------------------------------
    STAFF ENDPOINTS
-   ------------------------------------- */
+-------------------------------------- */
 
-// POST /api/staffregister - Registers a new staff member (including phone)
+// POST /api/staffregister - Registers a new staff member
 app.post('/api/staffregister', async (req, res) => {
   const { name, email, phone, password } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Name, email, and password are required.' });
   }
   try {
-    // Check if a staff user with this email already exists
     const existing = await pool.query('SELECT * FROM staff WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
       return res.status(400).json({ error: 'A staff user with that email already exists.' });
     }
-    // Hash the password before storing it
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await pool.query(
       `INSERT INTO staff (name, email, phone, password) 
@@ -118,7 +124,6 @@ app.post('/api/staffregister', async (req, res) => {
       [name, email, phone || null, hashedPassword]
     );
     const staffUser = result.rows[0];
-    // Sign a JWT token for staff authentication
     const token = jwt.sign({ id: staffUser.id, role: 'staff' }, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.status(201).json({ message: 'Staff registration successful', user: staffUser, token });
   } catch (err) {
@@ -126,7 +131,7 @@ app.post('/api/staffregister', async (req, res) => {
   }
 });
 
-// POST /api/stafflogin - Authenticates a staff user and returns user info and a JWT token
+// POST /api/stafflogin - Authenticates a staff user
 app.post('/api/stafflogin', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -142,9 +147,7 @@ app.post('/api/stafflogin', async (req, res) => {
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid credentials.' });
     }
-    // Sign a JWT token for staff authentication
     const token = jwt.sign({ id: staffUser.id, role: 'staff' }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    // Remove password before sending user object
     delete staffUser.password;
     res.json({ message: 'Staff login successful', user: staffUser, token });
   } catch (err) {
@@ -154,7 +157,7 @@ app.post('/api/stafflogin', async (req, res) => {
 
 /* -------------------------------------
    PETS ENDPOINTS (For Client Pet Management)
-   ------------------------------------- */
+-------------------------------------- */
 
 // GET /api/pets - Get all pets for the authenticated client
 app.get('/api/pets', authenticateToken, async (req, res) => {
@@ -169,9 +172,9 @@ app.get('/api/pets', authenticateToken, async (req, res) => {
 
 // POST /api/pets - Add a new pet for the authenticated client
 app.post('/api/pets', authenticateToken, async (req, res) => {
-  const { pet_name, breed, size, notes } = req.body;
   try {
     const clientId = req.user.id;
+    const { pet_name, breed, size, notes } = req.body;
     const result = await pool.query(
       `INSERT INTO pets (client_id, pet_name, breed, size, notes)
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
@@ -189,7 +192,6 @@ app.put('/api/pets/:petId', authenticateToken, async (req, res) => {
   const { pet_name, breed, size, notes } = req.body;
   try {
     const clientId = req.user.id;
-    // Check if the pet belongs to the client
     const check = await pool.query('SELECT id FROM pets WHERE id = $1 AND client_id = $2', [petId, clientId]);
     if (check.rows.length === 0) {
       return res.status(403).json({ error: 'Not authorized to update this pet.' });
@@ -197,8 +199,7 @@ app.put('/api/pets/:petId', authenticateToken, async (req, res) => {
     const result = await pool.query(
       `UPDATE pets 
        SET pet_name = $1, breed = $2, size = $3, notes = $4 
-       WHERE id = $5 
-       RETURNING *`,
+       WHERE id = $5 RETURNING *`,
       [pet_name, breed, size, notes, petId]
     );
     res.json(result.rows[0]);
@@ -212,7 +213,6 @@ app.delete('/api/pets/:petId', authenticateToken, async (req, res) => {
   const { petId } = req.params;
   try {
     const clientId = req.user.id;
-    // Check if the pet belongs to the client
     const check = await pool.query('SELECT id FROM pets WHERE id = $1 AND client_id = $2', [petId, clientId]);
     if (check.rows.length === 0) {
       return res.status(403).json({ error: 'Not authorized to delete this pet.' });
@@ -226,21 +226,6 @@ app.delete('/api/pets/:petId', authenticateToken, async (req, res) => {
 
 /* -------------------------------------
    START THE SERVER
-   ------------------------------------- */
+-------------------------------------- */
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Backend running on port ${PORT}`));
-
-/* -------------------------------------
-   JWT Authentication Middleware
-   ------------------------------------- */
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'No token provided' });
-  
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: 'Invalid token' });
-    req.user = user;
-    next();
-  });
-}
