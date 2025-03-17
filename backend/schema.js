@@ -6,8 +6,10 @@ const recreateTables = async () => {
     await pool.query(`DROP TABLE IF EXISTS notifications CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS reviews CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS payments CASCADE;`);
+    await pool.query(`DROP TABLE IF EXISTS booking_pets CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS bookings CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS staff_availability CASCADE;`);
+    await pool.query(`DROP TABLE IF EXISTS pets CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS clients CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS staff CASCADE;`);
 
@@ -32,6 +34,16 @@ const recreateTables = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
+      CREATE TABLE IF NOT EXISTS pets (
+        id SERIAL PRIMARY KEY,
+        client_id INT REFERENCES clients(id) ON DELETE CASCADE,
+        pet_name VARCHAR(100) NOT NULL,
+        breed VARCHAR(100),
+        size VARCHAR(50),
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
       CREATE TABLE IF NOT EXISTS bookings (
         id SERIAL PRIMARY KEY,
         client_id INT REFERENCES clients(id) ON DELETE CASCADE,
@@ -41,6 +53,12 @@ const recreateTables = async () => {
         special_instructions TEXT,
         status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'cancelled')),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS booking_pets (
+        id SERIAL PRIMARY KEY,
+        booking_id INT REFERENCES bookings(id) ON DELETE CASCADE,
+        pet_id INT REFERENCES pets(id) ON DELETE CASCADE
       );
 
       CREATE TABLE IF NOT EXISTS payments (
