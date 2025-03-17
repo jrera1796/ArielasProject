@@ -18,9 +18,7 @@ const ClientDashboardLayout = () => {
       {/* Header */}
       <header className="client-header">
         <div className="header-left">
-          <h2>
-            {firstName ? `Welcome back, ${firstName}!` : 'Welcome Back!'}
-          </h2>
+          <h2>{firstName ? `Welcome back, ${firstName}!` : 'Welcome Back!'}</h2>
           <p>Explore your bookings and account.</p>
         </div>
         <div className="header-right">
@@ -45,6 +43,23 @@ const ClientDashboardLayout = () => {
           )}
         </div>
       </header>
+
+      {/* Quick Actions Section */}
+      <section className="quick-actions">
+        <div className="action-card">
+          <Link to="/client/manage-pets">
+            <div className="action-icon">🐶</div>
+            <div className="action-title">Manage Pets</div>
+          </Link>
+        </div>
+        <div className="action-card">
+          <Link to="/client/bookings/new">
+            <div className="action-icon">🗓️</div>
+            <div className="action-title">Submit New Booking</div>
+          </Link>
+        </div>
+        {/* Add more action cards as needed */}
+      </section>
 
       {/* Main Content */}
       <main className="client-main">

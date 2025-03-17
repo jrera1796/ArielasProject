@@ -107,6 +107,40 @@
   font-size: 0.8rem;
 }
 
+/* Quick Actions Section */
+.quick-actions {
+  display: flex;
+  justify-content: space-around;
+  margin: 1rem 0;
+  gap: 1rem;
+}
+
+.action-card {
+  background: #f7f7f7;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  flex: 1;
+  transition: background 0.3s ease;
+}
+
+.action-card:hover {
+  background: #eaeaea;
+}
+
+.action-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.action-title {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+}
+
+
 @media (min-width: 768px) {
   .client-dashboard {
     max-width: 400px;
