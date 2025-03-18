@@ -3,6 +3,8 @@ const cors = require('cors');
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const stripeLib = require('stripe');
+const { sendBookingSubmission, sendBookingConfirmation } = require('./mailer'); // Assuming you have these functions in mailer.js
 require('dotenv').config();
 
 const app = express();
@@ -152,7 +154,7 @@ app.post('/api/stafflogin', async (req, res) => {
 });
 
 /* -------------------------------------
-   PETS ENDPOINTS
+   PETS ENDPOINTS (For Client Pet Management)
 -------------------------------------- */
 
 app.get('/api/pets', authenticateToken, async (req, res) => {
@@ -220,43 +222,59 @@ app.delete('/api/pets/:petId', authenticateToken, async (req, res) => {
    BOOKING ENDPOINTS
 -------------------------------------- */
 
+// POST /api/bookings - Create a new booking
 app.post('/api/bookings', authenticateToken, async (req, res) => {
-  const { date, time, service_type, pet_id } = req.body;
+  const { date, time, service_type } = req.body; // pet_id not directly in bookings
   const clientId = req.user.id;
 
   try {
     const result = await pool.query(
-      `INSERT INTO bookings (client_id, pet_id, date, time, service_type, status)
-       VALUES ($1, $2, $3, $4, $5, 'Pending') RETURNING *`,
-      [clientId, pet_id, date, time, service_type]
+      `INSERT INTO bookings (client_id, booking_date, booking_time, service_type, status)
+       VALUES ($1, $2, $3, $4, 'pending') RETURNING *`,
+      [clientId, date, time, service_type]
     );
     const newBooking = result.rows[0];
 
-    // Optionally, send a "booking submitted" email here if you like
-    // e.g., await sendBookingSubmission(...)
+    // If a pet_id is provided, insert into the join table
+    if (req.body.pet_id) {
+      await pool.query(
+        `INSERT INTO booking_pets (booking_id, pet_id) VALUES ($1, $2)`,
+        [newBooking.id, req.body.pet_id]
+      );
+    }
 
+    // Optionally, send a "booking submitted" email here (e.g., await sendBookingSubmission(...))
     res.status(201).json(newBooking);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+// GET /api/bookings - Get bookings for the authenticated client (join to include pet name)
 app.get('/api/bookings', authenticateToken, async (req, res) => {
   try {
     const clientId = req.user.id;
-    const result = await pool.query('SELECT * FROM bookings WHERE client_id = $1', [clientId]);
+    const result = await pool.query(
+      `SELECT b.*, p.pet_name
+       FROM bookings b
+       LEFT JOIN booking_pets bp ON b.id = bp.booking_id
+       LEFT JOIN pets p ON bp.pet_id = p.id
+       WHERE b.client_id = $1`,
+      [clientId]
+    );
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+// PUT /api/bookings/:bookingId/accept - Accept a booking (Staff only)
 app.put('/api/bookings/:bookingId/accept', authenticateToken, async (req, res) => {
   const { bookingId } = req.params;
   try {
-    // In a real app, you'd also verify staff role before accepting
+    // In a real app, verify staff role before updating
     const result = await pool.query(
-      `UPDATE bookings SET status = 'Confirmed' WHERE id = $1 RETURNING *`,
+      `UPDATE bookings SET status = 'confirmed' WHERE id = $1 RETURNING *`,
       [bookingId]
     );
     if (result.rows.length === 0) {
@@ -264,9 +282,7 @@ app.put('/api/bookings/:bookingId/accept', authenticateToken, async (req, res) =
     }
     const confirmedBooking = result.rows[0];
 
-    // Optionally send a "booking confirmed" email
-    // e.g., await sendBookingConfirmation(...)
-
+    // Optionally send a "booking confirmed" email (e.g., await sendBookingConfirmation(...))
     res.json(confirmedBooking);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -277,24 +293,32 @@ app.put('/api/bookings/:bookingId/accept', authenticateToken, async (req, res) =
    PAYMENT ENDPOINTS
 -------------------------------------- */
 
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = stripeLib(process.env.STRIPE_SECRET_KEY);
 
-// 1) Create booking + PaymentIntent
+// POST /api/create-payment-intent - Create a booking and PaymentIntent
 app.post('/api/create-payment-intent', authenticateToken, async (req, res) => {
   try {
     const { date, time, service_type, pet_id, amount } = req.body;
     const clientId = req.user.id;
 
-    // 1) Insert booking with status 'Pending'
-    const bookingResult = await pool.query(`
-      INSERT INTO bookings (client_id, pet_id, date, time, service_type, status)
-      VALUES ($1, $2, $3, $4, $5, 'Pending')
-      RETURNING *
-    `, [clientId, pet_id, date, time, service_type]);
-
+    // Insert booking (without pet_id) into bookings
+    const bookingResult = await pool.query(
+      `INSERT INTO bookings (client_id, booking_date, booking_time, service_type, status)
+       VALUES ($1, $2, $3, $4, 'pending')
+       RETURNING *`,
+      [clientId, date, time, service_type]
+    );
     const newBooking = bookingResult.rows[0];
 
-    // 2) Create a PaymentIntent with the given amount (in cents)
+    // If pet_id provided, insert into booking_pets join table
+    if (pet_id) {
+      await pool.query(
+        `INSERT INTO booking_pets (booking_id, pet_id) VALUES ($1, $2)`,
+        [newBooking.id, pet_id]
+      );
+    }
+
+    // Create a PaymentIntent with Stripe
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency: 'usd',
@@ -303,11 +327,10 @@ app.post('/api/create-payment-intent', authenticateToken, async (req, res) => {
         service_type,
         date,
         time,
-        pet_id
+        pet_id: pet_id || null
       }
     });
 
-    // Return booking + clientSecret
     res.json({
       booking: newBooking,
       clientSecret: paymentIntent.client_secret
@@ -318,21 +341,20 @@ app.post('/api/create-payment-intent', authenticateToken, async (req, res) => {
   }
 });
 
-// 2) Confirm final payment in DB after successful payment
+// POST /api/payments/confirm - Confirm final payment in DB after successful Stripe payment
 app.post('/api/payments/confirm', authenticateToken, async (req, res) => {
   try {
     const { bookingId, amount } = req.body;
-    // Insert a record in the 'payments' table
     const result = await pool.query(
       `INSERT INTO payments (booking_id, payment_method, amount, payment_status)
-       VALUES ($1, $2, $3, $4)
+       VALUES ($1, $2, $3, 'completed')
        RETURNING *`,
-      [bookingId, 'stripe', amount, 'completed']
+      [bookingId, 'stripe', amount]
     );
     const paymentRecord = result.rows[0];
 
-    // (Optional) If you want to automatically confirm the booking, you could do:
-    // await pool.query(`UPDATE bookings SET status = 'Confirmed' WHERE id = $1`, [bookingId]);
+    // Optionally, update booking status to 'confirmed'
+    // await pool.query(`UPDATE bookings SET status = 'confirmed' WHERE id = $1`, [bookingId]);
 
     res.json({ message: 'Payment recorded', payment: paymentRecord });
   } catch (error) {
