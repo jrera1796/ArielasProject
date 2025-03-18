@@ -155,36 +155,56 @@ const ClientBooking = () => {
     }
   };
 
-  // Step 3: Payment submission with Stripe
-  const handlePaymentSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    if (!stripe || !elements) return;
+  // Step 3: Payment
+const handlePaymentSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
+  if (!stripe || !elements) return;
 
-    const cardElement = elements.getElement(CardElement);
-    const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: { card: cardElement }
-    });
+  const cardElement = elements.getElement(CardElement);
+  const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+    payment_method: { card: cardElement }
+  });
 
-    if (stripeError) {
-      setError(stripeError.message);
-    } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-      // Refresh bookings
-      try {
-        const res = await fetch('/api/bookings', {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
-        });
-        if (res.ok) {
-          const updatedBookings = await res.json();
-          setBookings(updatedBookings);
-        }
-      } catch (err) {
-        console.error('Error updating bookings:', err);
+  if (stripeError) {
+    setError(stripeError.message);
+  } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+    // 1) Payment succeeded with Stripe. Now record the final payment in your DB:
+    try {
+      // For the example, we pass the same amount you used when creating the PaymentIntent.
+      // e.g. SERVICE_COSTS[bookingData.serviceType] or 2000, etc.
+      const costInCents = SERVICE_COSTS[bookingData.serviceType] || 0;
+
+      const confirmRes = await fetch('/api/payments/confirm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({ bookingId, amount: costInCents })
+      });
+      if (!confirmRes.ok) throw new Error('Failed to record payment in DB');
+      const confirmData = await confirmRes.json();
+      console.log('Payment recorded:', confirmData);
+
+      // 2) Refresh bookings list
+      const res = await fetch('/api/bookings', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+      });
+      if (res.ok) {
+        const updatedBookings = await res.json();
+        setBookings(updatedBookings);
       }
-      // Move to success step
+
+      // 3) Move to success step
       setStep(4);
+
+    } catch (err) {
+      console.error('Error updating payment record:', err);
+      setError(err.message);
     }
-  };
+  }
+};
 
   // Reset booking form
   const handleResetBookingForm = () => {
