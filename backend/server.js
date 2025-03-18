@@ -39,7 +39,7 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// (Optional) Test endpoint to verify database connection
+// Optional test endpoint
 app.get('/api/test', async (req, res) => {
   try {
     const result = await pool.query('SELECT NOW()');
@@ -50,10 +50,9 @@ app.get('/api/test', async (req, res) => {
 });
 
 /* -------------------------------------
-   CLIENT ENDPOINTS
+   CLIENT (Users) ENDPOINTS
 -------------------------------------- */
 
-// POST /api/register - Registers a new client
 app.post('/api/register', async (req, res) => {
   const { name, email, phone, password } = req.body;
   if (!name || !email || !password) {
@@ -78,7 +77,6 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// POST /api/login - Authenticates a client and returns user info and a JWT token
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -106,7 +104,6 @@ app.post('/api/login', async (req, res) => {
    STAFF ENDPOINTS
 -------------------------------------- */
 
-// POST /api/staffregister - Registers a new staff member
 app.post('/api/staffregister', async (req, res) => {
   const { name, email, phone, password } = req.body;
   if (!name || !email || !password) {
@@ -131,7 +128,6 @@ app.post('/api/staffregister', async (req, res) => {
   }
 });
 
-// POST /api/stafflogin - Authenticates a staff user
 app.post('/api/stafflogin', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -156,10 +152,9 @@ app.post('/api/stafflogin', async (req, res) => {
 });
 
 /* -------------------------------------
-   PETS ENDPOINTS (For Client Pet Management)
+   PETS ENDPOINTS
 -------------------------------------- */
 
-// GET /api/pets - Get all pets for the authenticated client
 app.get('/api/pets', authenticateToken, async (req, res) => {
   try {
     const clientId = req.user.id;
@@ -170,7 +165,6 @@ app.get('/api/pets', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/pets - Add a new pet for the authenticated client
 app.post('/api/pets', authenticateToken, async (req, res) => {
   try {
     const clientId = req.user.id;
@@ -186,7 +180,6 @@ app.post('/api/pets', authenticateToken, async (req, res) => {
   }
 });
 
-// PUT /api/pets/:petId - Update a pet's details (only if it belongs to the authenticated client)
 app.put('/api/pets/:petId', authenticateToken, async (req, res) => {
   const { petId } = req.params;
   const { pet_name, breed, size, notes } = req.body;
@@ -208,7 +201,6 @@ app.put('/api/pets/:petId', authenticateToken, async (req, res) => {
   }
 });
 
-// DELETE /api/pets/:petId - Delete a pet (only if it belongs to the authenticated client)
 app.delete('/api/pets/:petId', authenticateToken, async (req, res) => {
   const { petId } = req.params;
   try {
@@ -228,7 +220,6 @@ app.delete('/api/pets/:petId', authenticateToken, async (req, res) => {
    BOOKING ENDPOINTS
 -------------------------------------- */
 
-// POST /api/bookings - Create a new booking
 app.post('/api/bookings', authenticateToken, async (req, res) => {
   const { date, time, service_type, pet_id } = req.body;
   const clientId = req.user.id;
@@ -239,14 +230,10 @@ app.post('/api/bookings', authenticateToken, async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, 'Pending') RETURNING *`,
       [clientId, pet_id, date, time, service_type]
     );
-
     const newBooking = result.rows[0];
 
-    // Send booking submission email
-    const clientInfo = await pool.query('SELECT name, email FROM clients WHERE id = $1', [clientId]);
-    if (clientInfo.rows.length > 0) {
-      await sendBookingSubmission(clientInfo.rows[0].email, clientInfo.rows[0].name, newBooking);
-    }
+    // Optionally, send a "booking submitted" email here if you like
+    // e.g., await sendBookingSubmission(...)
 
     res.status(201).json(newBooking);
   } catch (err) {
@@ -254,7 +241,6 @@ app.post('/api/bookings', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/bookings - Get bookings for authenticated client
 app.get('/api/bookings', authenticateToken, async (req, res) => {
   try {
     const clientId = req.user.id;
@@ -265,27 +251,21 @@ app.get('/api/bookings', authenticateToken, async (req, res) => {
   }
 });
 
-// PUT /api/bookings/:bookingId/accept - Accept a booking (Staff only)
 app.put('/api/bookings/:bookingId/accept', authenticateToken, async (req, res) => {
   const { bookingId } = req.params;
-
   try {
+    // In a real app, you'd also verify staff role before accepting
     const result = await pool.query(
       `UPDATE bookings SET status = 'Confirmed' WHERE id = $1 RETURNING *`,
       [bookingId]
     );
-
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Booking not found' });
     }
-
     const confirmedBooking = result.rows[0];
 
-    // Send booking confirmation email
-    const clientInfo = await pool.query('SELECT name, email FROM clients WHERE id = $1', [confirmedBooking.client_id]);
-    if (clientInfo.rows.length > 0) {
-      await sendBookingConfirmation(clientInfo.rows[0].email, clientInfo.rows[0].name, confirmedBooking);
-    }
+    // Optionally send a "booking confirmed" email
+    // e.g., await sendBookingConfirmation(...)
 
     res.json(confirmedBooking);
   } catch (err) {
@@ -294,29 +274,69 @@ app.put('/api/bookings/:bookingId/accept', authenticateToken, async (req, res) =
 });
 
 /* -------------------------------------
-   PAYMENT ENDPOINT
+   PAYMENT ENDPOINTS
 -------------------------------------- */
+
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
-// POST /api/create-payment-intent - Create a Stripe PaymentIntent for a booking
+// 1) Create booking + PaymentIntent
 app.post('/api/create-payment-intent', authenticateToken, async (req, res) => {
   try {
-    // Extract booking details from request body
-    const { date, time, service_type, pet_id } = req.body;
-    // For example purposes, we use a fixed amount (e.g., $20.00 → 2000 cents)
-    const amount = 2000;
+    const { date, time, service_type, pet_id, amount } = req.body;
+    const clientId = req.user.id;
 
-    // Create a PaymentIntent with Stripe
+    // 1) Insert booking with status 'Pending'
+    const bookingResult = await pool.query(`
+      INSERT INTO bookings (client_id, pet_id, date, time, service_type, status)
+      VALUES ($1, $2, $3, $4, $5, 'Pending')
+      RETURNING *
+    `, [clientId, pet_id, date, time, service_type]);
+
+    const newBooking = bookingResult.rows[0];
+
+    // 2) Create a PaymentIntent with the given amount (in cents)
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency: 'usd',
-      // Optionally add metadata to track booking details
-      metadata: { service_type, date, time, pet_id }
+      metadata: {
+        booking_id: newBooking.id,
+        service_type,
+        date,
+        time,
+        pet_id
+      }
     });
 
-    res.json({ clientSecret: paymentIntent.client_secret });
+    // Return booking + clientSecret
+    res.json({
+      booking: newBooking,
+      clientSecret: paymentIntent.client_secret
+    });
   } catch (error) {
     console.error("Error creating payment intent:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 2) Confirm final payment in DB after successful payment
+app.post('/api/payments/confirm', authenticateToken, async (req, res) => {
+  try {
+    const { bookingId, amount } = req.body;
+    // Insert a record in the 'payments' table
+    const result = await pool.query(
+      `INSERT INTO payments (booking_id, payment_method, amount, payment_status)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [bookingId, 'stripe', amount, 'completed']
+    );
+    const paymentRecord = result.rows[0];
+
+    // (Optional) If you want to automatically confirm the booking, you could do:
+    // await pool.query(`UPDATE bookings SET status = 'Confirmed' WHERE id = $1`, [bookingId]);
+
+    res.json({ message: 'Payment recorded', payment: paymentRecord });
+  } catch (error) {
+    console.error("Error saving payment:", error);
     res.status(500).json({ error: error.message });
   }
 });
