@@ -24,7 +24,7 @@ const ClientBooking = () => {
   const [clientSecret, setClientSecret] = useState('');
   const [error, setError] = useState('');
 
-  // Bookings and pets are now initialized as empty arrays
+  // Initialize bookings and userPets as empty arrays.
   const [bookings, setBookings] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [userPets, setUserPets] = useState([]);
@@ -32,7 +32,7 @@ const ClientBooking = () => {
   const stripe = useStripe();
   const elements = useElements();
 
-  // Fetch user's pets from API when component mounts
+  // Fetch user's pets from API when component mounts.
   useEffect(() => {
     const fetchPets = async () => {
       try {
@@ -43,6 +43,7 @@ const ClientBooking = () => {
         });
         if (!res.ok) throw new Error('Failed to fetch pets');
         const petsData = await res.json();
+        console.log('Fetched pets:', petsData);
         setUserPets(petsData);
       } catch (err) {
         console.error('Error fetching pets:', err);
@@ -51,7 +52,7 @@ const ClientBooking = () => {
     fetchPets();
   }, []);
 
-  // Fetch bookings from API when component mounts
+  // Fetch bookings from API when component mounts.
   useEffect(() => {
     const fetchBookings = async () => {
       try {
@@ -62,6 +63,7 @@ const ClientBooking = () => {
         });
         if (!res.ok) throw new Error('Failed to fetch bookings');
         const bookingsData = await res.json();
+        console.log('Fetched bookings:', bookingsData);
         setBookings(bookingsData);
       } catch (err) {
         console.error('Error fetching bookings:', err);
@@ -70,7 +72,7 @@ const ClientBooking = () => {
     fetchBookings();
   }, []);
 
-  // Generate time options from 8:00 AM to 8:00 PM in 15-minute intervals
+  // Generate time options from 8:00 AM to 8:00 PM in 15-minute intervals.
   const generateTimeOptions = () => {
     const options = [];
     for (let hour = 8; hour <= 20; hour++) {
@@ -86,7 +88,7 @@ const ClientBooking = () => {
   };
   const timeOptions = generateTimeOptions();
 
-  // Handle booking form submission: Create booking and PaymentIntent via backend
+  // Handle booking form submission: Create booking and PaymentIntent via backend.
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -111,7 +113,7 @@ const ClientBooking = () => {
           date: bookingData.date,
           time: bookingData.time,
           service_type: bookingData.serviceType,
-          pet_id: bookingData.selectedPet // Only supporting pet selection here.
+          pet_id: bookingData.selectedPet // For simplicity, only supporting pet selection here.
         })
       });
       if (!res.ok) throw new Error('Failed to create booking');
@@ -124,7 +126,7 @@ const ClientBooking = () => {
     }
   };
 
-  // Handle payment submission using Stripe API
+  // Handle payment submission using Stripe API.
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -140,13 +142,17 @@ const ClientBooking = () => {
     if (stripeError) {
       setError(stripeError.message);
     } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-      // Payment succeeded, update bookings list
-      const res = await fetch('/api/bookings', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
-      });
-      if (res.ok) {
-        const updatedBookings = await res.json();
-        setBookings(updatedBookings);
+      // Payment succeeded, refresh bookings list.
+      try {
+        const res = await fetch('/api/bookings', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+        });
+        if (res.ok) {
+          const updatedBookings = await res.json();
+          setBookings(updatedBookings);
+        }
+      } catch (err) {
+        console.error('Error updating bookings:', err);
       }
       setStep(3);
     }
