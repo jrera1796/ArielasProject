@@ -55,7 +55,7 @@ const ClientDashboardLayout = () => {
             </Link>
           </div>
           <div className="action-card">
-            <Link to="/client/bookings/new">
+            <Link to="/client/bookings">
               <div className="action-icon">🗓️</div>
               <div className="action-title">Submit New Booking</div>
             </Link>

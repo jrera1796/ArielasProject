@@ -239,9 +239,9 @@ const ClientBooking = () => {
                   required
                 >
                   <option value="">Select a service</option>
-                  <option value="grooming">Grooming</option>
-                  <option value="walking">Walking</option>
-                  <option value="training">Training</option>
+                  <option value="Grooming">Grooming</option>
+                  <option value="Walking">Walking</option>
+                  <option value="Training">Training</option>
                   {/* Add other service options as needed */}
                 </select>
               </div>

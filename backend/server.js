@@ -225,6 +225,75 @@ app.delete('/api/pets/:petId', authenticateToken, async (req, res) => {
 });
 
 /* -------------------------------------
+   BOOKING ENDPOINTS
+-------------------------------------- */
+
+// POST /api/bookings - Create a new booking
+app.post('/api/bookings', authenticateToken, async (req, res) => {
+  const { date, time, service_type, pet_id } = req.body;
+  const clientId = req.user.id;
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO bookings (client_id, pet_id, date, time, service_type, status)
+       VALUES ($1, $2, $3, $4, $5, 'Pending') RETURNING *`,
+      [clientId, pet_id, date, time, service_type]
+    );
+
+    const newBooking = result.rows[0];
+
+    // Send booking submission email
+    const clientInfo = await pool.query('SELECT name, email FROM clients WHERE id = $1', [clientId]);
+    if (clientInfo.rows.length > 0) {
+      await sendBookingSubmission(clientInfo.rows[0].email, clientInfo.rows[0].name, newBooking);
+    }
+
+    res.status(201).json(newBooking);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/bookings - Get bookings for authenticated client
+app.get('/api/bookings', authenticateToken, async (req, res) => {
+  try {
+    const clientId = req.user.id;
+    const result = await pool.query('SELECT * FROM bookings WHERE client_id = $1', [clientId]);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/bookings/:bookingId - Accept a booking (Staff only)
+app.put('/api/bookings/:bookingId/accept', authenticateToken, async (req, res) => {
+  const { bookingId } = req.params;
+
+  try {
+    const result = await pool.query(
+      `UPDATE bookings SET status = 'Confirmed' WHERE id = $1 RETURNING *`,
+      [bookingId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    const confirmedBooking = result.rows[0];
+
+    // Send booking confirmation email
+    const clientInfo = await pool.query('SELECT name, email FROM clients WHERE id = $1', [confirmedBooking.client_id]);
+    if (clientInfo.rows.length > 0) {
+      await sendBookingConfirmation(clientInfo.rows[0].email, clientInfo.rows[0].name, confirmedBooking);
+    }
+
+    res.json(confirmedBooking);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* -------------------------------------
    START THE SERVER
 -------------------------------------- */
 const PORT = process.env.PORT || 5000;
