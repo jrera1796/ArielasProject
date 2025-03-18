@@ -47,7 +47,7 @@ const recreateTables = async () => {
       CREATE TABLE IF NOT EXISTS bookings (
         id SERIAL PRIMARY KEY,
         client_id INT REFERENCES clients(id) ON DELETE CASCADE,
-        service_type VARCHAR(50) CHECK (service_type IN ('dog walking', 'boarding', 'pet care')) NOT NULL,
+        service_type VARCHAR(50) CHECK (service_type IN ('Grooming', 'Walking', 'Training')) NOT NULL,
         booking_date DATE NOT NULL,
         booking_time TIME NOT NULL,
         special_instructions TEXT,
