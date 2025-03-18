@@ -8,7 +8,7 @@ import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import './css/App.css';
 
-const stripePromise = loadStripe('your-publishable-key-here');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
