@@ -11,7 +11,7 @@ const ClientBooking = () => {
     date: '',
     time: '',
     serviceType: '',
-    petOption: 'select', // "select" from existing pets; "manual" to enter details manually (manual not supported in API call below)
+    petOption: 'select', // "select" from existing pets; "manual" to enter details manually (manual not supported here)
     selectedPet: '',
     petDetails: {
       name: '',
@@ -24,11 +24,9 @@ const ClientBooking = () => {
   const [clientSecret, setClientSecret] = useState('');
   const [error, setError] = useState('');
 
-  // State for bookings fetched from API
+  // Bookings and pets are now initialized as empty arrays
   const [bookings, setBookings] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");
-
-  // State for user's pets fetched from API
   const [userPets, setUserPets] = useState([]);
 
   const stripe = useStripe();
@@ -47,7 +45,7 @@ const ClientBooking = () => {
         const petsData = await res.json();
         setUserPets(petsData);
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching pets:', err);
       }
     };
     fetchPets();
@@ -66,7 +64,7 @@ const ClientBooking = () => {
         const bookingsData = await res.json();
         setBookings(bookingsData);
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching bookings:', err);
       }
     };
     fetchBookings();
@@ -113,7 +111,7 @@ const ClientBooking = () => {
           date: bookingData.date,
           time: bookingData.time,
           service_type: bookingData.serviceType,
-          pet_id: bookingData.selectedPet // For simplicity, only supporting pet selection here.
+          pet_id: bookingData.selectedPet // Only supporting pet selection here.
         })
       });
       if (!res.ok) throw new Error('Failed to create booking');
@@ -322,7 +320,6 @@ const ClientBooking = () => {
                 </div>
               )}
 
-              {/* For simplicity, manual pet entry is not supported when using Stripe payment */}
               <button className="booking-submit-btn" type="submit">
                 Continue to Payment
               </button>
@@ -347,9 +344,9 @@ const ClientBooking = () => {
               <p>Your booking reference is: <strong>{bookingId}</strong></p>
               <p>Your booking is pending and will appear in your account.</p>
               <button onClick={() => {
-                setActiveTab("list");
-                handleResetBookingForm();
-              }}>
+                  setActiveTab("list");
+                  handleResetBookingForm();
+                }}>
                 View My Bookings
               </button>
             </div>
