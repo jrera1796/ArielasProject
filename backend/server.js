@@ -265,7 +265,7 @@ app.get('/api/bookings', authenticateToken, async (req, res) => {
   }
 });
 
-// PUT /api/bookings/:bookingId - Accept a booking (Staff only)
+// PUT /api/bookings/:bookingId/accept - Accept a booking (Staff only)
 app.put('/api/bookings/:bookingId/accept', authenticateToken, async (req, res) => {
   const { bookingId } = req.params;
 
@@ -290,6 +290,34 @@ app.put('/api/bookings/:bookingId/accept', authenticateToken, async (req, res) =
     res.json(confirmedBooking);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+/* -------------------------------------
+   PAYMENT ENDPOINT
+-------------------------------------- */
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+// POST /api/create-payment-intent - Create a Stripe PaymentIntent for a booking
+app.post('/api/create-payment-intent', authenticateToken, async (req, res) => {
+  try {
+    // Extract booking details from request body
+    const { date, time, service_type, pet_id } = req.body;
+    // For example purposes, we use a fixed amount (e.g., $20.00 → 2000 cents)
+    const amount = 2000;
+
+    // Create a PaymentIntent with Stripe
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'usd',
+      // Optionally add metadata to track booking details
+      metadata: { service_type, date, time, pet_id }
+    });
+
+    res.json({ clientSecret: paymentIntent.client_secret });
+  } catch (error) {
+    console.error("Error creating payment intent:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 

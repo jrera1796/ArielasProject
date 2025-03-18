@@ -1,17 +1,17 @@
-// src/pages/ClientBooking.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import '../css/BookingForm.css';
 
 const ClientBooking = () => {
   // Tab state: "list" shows bookings, "new" shows the new booking form.
   const [activeTab, setActiveTab] = useState("list");
-  // Booking process step (only used in "new" tab)
+  // Step state: 1 = booking form, 2 = payment, 3 = success
   const [step, setStep] = useState(1);
   const [bookingData, setBookingData] = useState({
     date: '',
     time: '',
     serviceType: '',
-    petOption: 'select', // "select" from existing pets or "manual" to enter details
+    petOption: 'select', // "select" from existing pets; "manual" to enter details manually (manual not supported in API call below)
     selectedPet: '',
     petDetails: {
       name: '',
@@ -21,16 +21,58 @@ const ClientBooking = () => {
     }
   });
   const [bookingId, setBookingId] = useState(null);
+  const [clientSecret, setClientSecret] = useState('');
   const [error, setError] = useState('');
 
-  // Dummy bookings list. In production, fetch these from an API.
-  const [bookings, setBookings] = useState([
-    { id: 'BK-1234', date: '2025-03-15', time: '10:00 AM PST', serviceType: 'Grooming', status: 'Pending', pet: 'Buddy' },
-    { id: 'BK-5678', date: '2025-03-16', time: '11:15 AM PST', serviceType: 'Walking', status: 'Confirmed', pet: 'Max' }
-  ]);
+  // State for bookings fetched from API
+  const [bookings, setBookings] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");
 
-  // Generate time options from 8:00 AM to 8:00 PM in 15-minute intervals, formatted with "PST".
+  // State for user's pets fetched from API
+  const [userPets, setUserPets] = useState([]);
+
+  const stripe = useStripe();
+  const elements = useElements();
+
+  // Fetch user's pets from API when component mounts
+  useEffect(() => {
+    const fetchPets = async () => {
+      try {
+        const res = await fetch('/api/pets', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+        if (!res.ok) throw new Error('Failed to fetch pets');
+        const petsData = await res.json();
+        setUserPets(petsData);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchPets();
+  }, []);
+
+  // Fetch bookings from API when component mounts
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const res = await fetch('/api/bookings', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+        if (!res.ok) throw new Error('Failed to fetch bookings');
+        const bookingsData = await res.json();
+        setBookings(bookingsData);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchBookings();
+  }, []);
+
+  // Generate time options from 8:00 AM to 8:00 PM in 15-minute intervals
   const generateTimeOptions = () => {
     const options = [];
     for (let hour = 8; hour <= 20; hour++) {
@@ -39,26 +81,18 @@ const ClientBooking = () => {
         let displayHour = hour % 12;
         if (displayHour === 0) displayHour = 12;
         const minuteStr = minutes.toString().padStart(2, '0');
-        const timeStr = `${displayHour}:${minuteStr} ${suffix} PST`;
-        options.push(timeStr);
+        options.push(`${displayHour}:${minuteStr} ${suffix} PST`);
       }
     }
     return options;
   };
   const timeOptions = generateTimeOptions();
 
-  // Dummy data for user pets (should come from user state or API)
-  const userPets = [
-    { id: 'pet1', name: 'Buddy' },
-    { id: 'pet2', name: 'Max' }
-  ];
-
-  // Handle booking form submission (Step 1: create a booking)
-  const handleBookingSubmit = (e) => {
+  // Handle booking form submission: Create booking and PaymentIntent via backend
+  const handleBookingSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    // Validate pet information based on selection
     if (bookingData.petOption === 'select' && !bookingData.selectedPet) {
       setError('Please select one of your pets.');
       return;
@@ -68,33 +102,56 @@ const ClientBooking = () => {
       return;
     }
 
-    // Simulate booking creation (pending status) and generate a booking reference.
-    setTimeout(() => {
-      const newId = `BK-${Math.floor(Math.random() * 10000)}`;
-      setBookingId(newId);
+    try {
+      const res = await fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({
+          date: bookingData.date,
+          time: bookingData.time,
+          service_type: bookingData.serviceType,
+          pet_id: bookingData.selectedPet // For simplicity, only supporting pet selection here.
+        })
+      });
+      if (!res.ok) throw new Error('Failed to create booking');
+      const data = await res.json();
+      setBookingId(data.booking.id);
+      setClientSecret(data.clientSecret);
       setStep(2);
-    }, 500);
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
-  // Handle payment step (Step 2). Here we simulate processing then add the booking to the list.
-  const handlePaymentProceed = () => {
-    const petName =
-      bookingData.petOption === 'select'
-        ? userPets.find((p) => p.id === bookingData.selectedPet)?.name
-        : bookingData.petDetails.name;
+  // Handle payment submission using Stripe API
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!stripe || !elements) return;
 
-    const newBooking = {
-      id: bookingId,
-      date: bookingData.date,
-      time: bookingData.time,
-      serviceType: bookingData.serviceType,
-      status: "Pending",
-      pet: petName
-    };
+    const cardElement = elements.getElement(CardElement);
+    const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: {
+        card: cardElement
+      }
+    });
 
-    // Update bookings list
-    setBookings((prev) => [...prev, newBooking]);
-    setStep(3);
+    if (stripeError) {
+      setError(stripeError.message);
+    } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+      // Payment succeeded, update bookings list
+      const res = await fetch('/api/bookings', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+      });
+      if (res.ok) {
+        const updatedBookings = await res.json();
+        setBookings(updatedBookings);
+      }
+      setStep(3);
+    }
   };
 
   // Reset the booking form for a new submission.
@@ -114,6 +171,7 @@ const ClientBooking = () => {
       }
     });
     setBookingId(null);
+    setClientSecret('');
     setError('');
   };
 
@@ -121,19 +179,13 @@ const ClientBooking = () => {
     <div className="client-booking-page">
       {/* Navigation Tabs */}
       <div className="tabs">
-        <button
-          className={activeTab === "list" ? "active" : ""}
-          onClick={() => setActiveTab("list")}
-        >
+        <button className={activeTab === "list" ? "active" : ""} onClick={() => setActiveTab("list")}>
           My Bookings
         </button>
-        <button
-          className={activeTab === "new" ? "active" : ""}
-          onClick={() => {
-            setActiveTab("new");
-            handleResetBookingForm();
-          }}
-        >
+        <button className={activeTab === "new" ? "active" : ""} onClick={() => {
+          setActiveTab("new");
+          handleResetBookingForm();
+        }}>
           New Booking Request
         </button>
       </div>
@@ -144,11 +196,7 @@ const ClientBooking = () => {
           <h2>My Bookings</h2>
           <div className="filter">
             <label htmlFor="filterStatus">Filter by Status:</label>
-            <select
-              id="filterStatus"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
+            <select id="filterStatus" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
               <option value="all">All</option>
               <option value="Pending">Pending</option>
               <option value="Confirmed">Confirmed</option>
@@ -167,18 +215,15 @@ const ClientBooking = () => {
             </thead>
             <tbody>
               {bookings
-                .filter(
-                  (booking) =>
-                    filterStatus === "all" || booking.status === filterStatus
-                )
+                .filter(booking => filterStatus === "all" || booking.status === filterStatus)
                 .map((booking) => (
                   <tr key={booking.id}>
                     <td>{booking.id}</td>
                     <td>{booking.date}</td>
                     <td>{booking.time}</td>
-                    <td>{booking.serviceType}</td>
+                    <td>{booking.service_type}</td>
                     <td>{booking.status}</td>
-                    <td>{booking.pet}</td>
+                    <td>{booking.pet_name}</td>
                   </tr>
                 ))}
             </tbody>
@@ -199,9 +244,7 @@ const ClientBooking = () => {
                   id="date"
                   type="date"
                   value={bookingData.date}
-                  onChange={(e) =>
-                    setBookingData({ ...bookingData, date: e.target.value })
-                  }
+                  onChange={(e) => setBookingData({ ...bookingData, date: e.target.value })}
                   required
                 />
               </div>
@@ -211,16 +254,12 @@ const ClientBooking = () => {
                 <select
                   id="time"
                   value={bookingData.time}
-                  onChange={(e) =>
-                    setBookingData({ ...bookingData, time: e.target.value })
-                  }
+                  onChange={(e) => setBookingData({ ...bookingData, time: e.target.value })}
                   required
                 >
                   <option value="">Select a time</option>
                   {timeOptions.map((time, index) => (
-                    <option key={index} value={time}>
-                      {time}
-                    </option>
+                    <option key={index} value={time}>{time}</option>
                   ))}
                 </select>
               </div>
@@ -230,19 +269,13 @@ const ClientBooking = () => {
                 <select
                   id="serviceType"
                   value={bookingData.serviceType}
-                  onChange={(e) =>
-                    setBookingData({
-                      ...bookingData,
-                      serviceType: e.target.value
-                    })
-                  }
+                  onChange={(e) => setBookingData({ ...bookingData, serviceType: e.target.value })}
                   required
                 >
                   <option value="">Select a service</option>
                   <option value="Grooming">Grooming</option>
                   <option value="Walking">Walking</option>
                   <option value="Training">Training</option>
-                  {/* Add other service options as needed */}
                 </select>
               </div>
 
@@ -255,12 +288,7 @@ const ClientBooking = () => {
                     name="petOption"
                     value="select"
                     checked={bookingData.petOption === 'select'}
-                    onChange={(e) =>
-                      setBookingData({
-                        ...bookingData,
-                        petOption: e.target.value
-                      })
-                    }
+                    onChange={(e) => setBookingData({ ...bookingData, petOption: e.target.value })}
                   />
                   <label htmlFor="selectPet">Select from my pets</label>
                 </div>
@@ -271,12 +299,7 @@ const ClientBooking = () => {
                     name="petOption"
                     value="manual"
                     checked={bookingData.petOption === 'manual'}
-                    onChange={(e) =>
-                      setBookingData({
-                        ...bookingData,
-                        petOption: e.target.value
-                      })
-                    }
+                    onChange={(e) => setBookingData({ ...bookingData, petOption: e.target.value })}
                   />
                   <label htmlFor="manualPet">Enter pet details manually</label>
                 </div>
@@ -288,131 +311,45 @@ const ClientBooking = () => {
                   <select
                     id="selectedPet"
                     value={bookingData.selectedPet}
-                    onChange={(e) =>
-                      setBookingData({
-                        ...bookingData,
-                        selectedPet: e.target.value
-                      })
-                    }
+                    onChange={(e) => setBookingData({ ...bookingData, selectedPet: e.target.value })}
                     required
                   >
                     <option value="">Select a pet</option>
                     {userPets.map((pet) => (
-                      <option key={pet.id} value={pet.id}>
-                        {pet.name}
-                      </option>
+                      <option key={pet.id} value={pet.id}>{pet.name}</option>
                     ))}
                   </select>
                 </div>
               )}
 
-              {bookingData.petOption === 'manual' && (
-                <div className="pet-details">
-                  <div className="form-group">
-                    <label htmlFor="petName">Pet Name</label>
-                    <input
-                      id="petName"
-                      type="text"
-                      placeholder="Your pet's name"
-                      value={bookingData.petDetails.name}
-                      onChange={(e) =>
-                        setBookingData({
-                          ...bookingData,
-                          petDetails: {
-                            ...bookingData.petDetails,
-                            name: e.target.value
-                          }
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="breed">Breed</label>
-                    <input
-                      id="breed"
-                      type="text"
-                      placeholder="Breed"
-                      value={bookingData.petDetails.breed}
-                      onChange={(e) =>
-                        setBookingData({
-                          ...bookingData,
-                          petDetails: {
-                            ...bookingData.petDetails,
-                            breed: e.target.value
-                          }
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="size">Size</label>
-                    <input
-                      id="size"
-                      type="text"
-                      placeholder="Size (e.g., Small, Medium, Large)"
-                      value={bookingData.petDetails.size}
-                      onChange={(e) =>
-                        setBookingData({
-                          ...bookingData,
-                          petDetails: {
-                            ...bookingData.petDetails,
-                            size: e.target.value
-                          }
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="notes">Special Notes</label>
-                    <textarea
-                      id="notes"
-                      placeholder="Any special notes"
-                      value={bookingData.petDetails.notes}
-                      onChange={(e) =>
-                        setBookingData({
-                          ...bookingData,
-                          petDetails: {
-                            ...bookingData.petDetails,
-                            notes: e.target.value
-                          }
-                        })
-                      }
-                    ></textarea>
-                  </div>
-                </div>
-              )}
-
+              {/* For simplicity, manual pet entry is not supported when using Stripe payment */}
               <button className="booking-submit-btn" type="submit">
-                Book Now
+                Continue to Payment
               </button>
               {error && <p className="error-msg">{error}</p>}
             </form>
           )}
 
           {step === 2 && (
-            <div className="payment-form">
+            <form className="payment-form" onSubmit={handlePaymentSubmit}>
               <h2>Payment</h2>
-              <p>Payment processing isn’t implemented yet.</p>
-              <button className="payment-submit-btn" onClick={handlePaymentProceed}>
-                Continue
+              <CardElement />
+              <button className="payment-submit-btn" type="submit" disabled={!stripe}>
+                Pay Now
               </button>
-            </div>
+              {error && <p className="error-msg">{error}</p>}
+            </form>
           )}
 
           {step === 3 && (
             <div className="success-page">
               <h2>Booking Successful!</h2>
-              <p>
-                Your booking reference is: <strong>{bookingId}</strong>
-              </p>
+              <p>Your booking reference is: <strong>{bookingId}</strong></p>
               <p>Your booking is pending and will appear in your account.</p>
-              <button
-                onClick={() => {
-                  setActiveTab("list");
-                  handleResetBookingForm();
-                }}
-              >
+              <button onClick={() => {
+                setActiveTab("list");
+                handleResetBookingForm();
+              }}>
                 View My Bookings
               </button>
             </div>
