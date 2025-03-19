@@ -4,7 +4,7 @@ const multer = require('multer');
 const multerS3 = require('multer-s3');
 const aws = require('aws-sdk');
 const { Pool } = require('pg');
-const { authenticateToken } = require('../authMiddleware'); // your auth middleware
+const { authenticateToken } = require('./authMiddleware'); // your auth middleware
 const pool = require('./db'); // your pool configuration
 
 // Configure AWS
