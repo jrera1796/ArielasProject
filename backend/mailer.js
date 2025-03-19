@@ -1,10 +1,11 @@
 const nodemailer = require('nodemailer');
+const path = require('path');
 
-// Create a transporter using Zoho SMTP settings
+// Create a transporter using your Zoho SMTP settings
 const transporter = nodemailer.createTransport({
   host: 'smtp.zoho.com',
-  port: 465, // For SSL. Alternatively, use 587 for TLS.
-  secure: true, // True for port 465
+  port: 465,             // For SSL. Alternatively, use 587 for TLS.
+  secure: true,          // True for port 465
   auth: {
     user: process.env.EMAIL_USER, // Your Zoho email address
     pass: process.env.EMAIL_PASS  // Your Zoho email password or app-specific password
@@ -23,7 +24,18 @@ const sendBookingSubmission = async (clientEmail, clientName, bookingDetails) =>
     html: `<p>Hi ${clientName},</p>
            <p>We have received your booking request for <strong>${bookingDetails.service_type}</strong> on <strong>${bookingDetails.date}</strong> at <strong>${bookingDetails.time}</strong>.</p>
            <p>Our staff will review your request and confirm it shortly.</p>
-           <p>Thank you for choosing SF Tails!</p>`
+           <p>Thank you for choosing SF Tails!</p>
+           <hr/>
+           <p style="text-align:center;">
+             <img src="cid:sftailslogo" alt="SF Tails Logo" style="width:100px;"/>
+           </p>`,
+    attachments: [
+      {
+        filename: 'SFTailsLogo.png',
+        path: path.join(__dirname, 'assets', 'SFTailsLogo.png'),
+        cid: 'sftailslogo' // Same cid value to reference in the HTML
+      }
+    ]
   };
 
   try {
@@ -46,7 +58,18 @@ const sendBookingConfirmation = async (clientEmail, clientName, bookingDetails) 
     html: `<p>Hi ${clientName},</p>
            <p>Great news! Your booking for <strong>${bookingDetails.service_type}</strong> on <strong>${bookingDetails.date}</strong> at <strong>${bookingDetails.time}</strong> has been confirmed.</p>
            <p>We look forward to seeing you soon!</p>
-           <p>Thank you for choosing SF Tails!</p>`
+           <p>Thank you for choosing SF Tails!</p>
+           <hr/>
+           <p style="text-align:center;">
+             <img src="cid:sftailslogo" alt="SF Tails Logo" style="width:100px;"/>
+           </p>`,
+    attachments: [
+      {
+        filename: 'SFTailsLogo.png',
+        path: path.join(__dirname, 'assets', 'SFTailsLogo.png'),
+        cid: 'sftailslogo'
+      }
+    ]
   };
 
   try {

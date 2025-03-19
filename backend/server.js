@@ -4,8 +4,9 @@ const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const stripeLib = require('stripe');
-const { sendBookingSubmission, sendBookingConfirmation } = require('./mailer'); // Assuming you have these functions in mailer.js
+const { sendBookingSubmission, sendBookingConfirmation } = require('./mailer'); // Your mailer functions
 require('dotenv').config();
+const petImagesRoutes = require('./petImages');
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
+app.use('/api/pet-images', petImagesRoutes);
 
 // PostgreSQL connection pool configuration
 const pool = new Pool({
@@ -222,9 +224,10 @@ app.delete('/api/pets/:petId', authenticateToken, async (req, res) => {
    BOOKING ENDPOINTS
 -------------------------------------- */
 
-// POST /api/bookings - Create a new booking
+// POST /api/bookings - Create a new booking.
+// Note: The bookings table does not include pet_id; instead, if provided, we insert into the join table booking_pets.
 app.post('/api/bookings', authenticateToken, async (req, res) => {
-  const { date, time, service_type } = req.body; // pet_id not directly in bookings
+  const { date, time, service_type, pet_id } = req.body;
   const clientId = req.user.id;
 
   try {
@@ -235,22 +238,26 @@ app.post('/api/bookings', authenticateToken, async (req, res) => {
     );
     const newBooking = result.rows[0];
 
-    // If a pet_id is provided, insert into the join table
-    if (req.body.pet_id) {
+    if (pet_id) {
       await pool.query(
         `INSERT INTO booking_pets (booking_id, pet_id) VALUES ($1, $2)`,
-        [newBooking.id, req.body.pet_id]
+        [newBooking.id, pet_id]
       );
     }
 
-    // Optionally, send a "booking submitted" email here (e.g., await sendBookingSubmission(...))
+    // Send booking submission email
+    const clientInfo = await pool.query('SELECT name, email FROM clients WHERE id = $1', [clientId]);
+    if (clientInfo.rows.length > 0) {
+      await sendBookingSubmission(clientInfo.rows[0].email, clientInfo.rows[0].name, newBooking);
+    }
+
     res.status(201).json(newBooking);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// GET /api/bookings - Get bookings for the authenticated client (join to include pet name)
+// GET /api/bookings - Get bookings for authenticated client (with pet name via join)
 app.get('/api/bookings', authenticateToken, async (req, res) => {
   try {
     const clientId = req.user.id;
@@ -272,7 +279,7 @@ app.get('/api/bookings', authenticateToken, async (req, res) => {
 app.put('/api/bookings/:bookingId/accept', authenticateToken, async (req, res) => {
   const { bookingId } = req.params;
   try {
-    // In a real app, verify staff role before updating
+    // (In a real app, verify the staff role before updating)
     const result = await pool.query(
       `UPDATE bookings SET status = 'confirmed' WHERE id = $1 RETURNING *`,
       [bookingId]
@@ -282,7 +289,12 @@ app.put('/api/bookings/:bookingId/accept', authenticateToken, async (req, res) =
     }
     const confirmedBooking = result.rows[0];
 
-    // Optionally send a "booking confirmed" email (e.g., await sendBookingConfirmation(...))
+    // Send booking confirmation email
+    const clientInfo = await pool.query('SELECT name, email FROM clients WHERE id = $1', [confirmedBooking.client_id]);
+    if (clientInfo.rows.length > 0) {
+      await sendBookingConfirmation(clientInfo.rows[0].email, clientInfo.rows[0].name, confirmedBooking);
+    }
+
     res.json(confirmedBooking);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -301,7 +313,7 @@ app.post('/api/create-payment-intent', authenticateToken, async (req, res) => {
     const { date, time, service_type, pet_id, amount } = req.body;
     const clientId = req.user.id;
 
-    // Insert booking (without pet_id) into bookings
+    // Insert booking (without pet_id) into bookings table
     const bookingResult = await pool.query(
       `INSERT INTO bookings (client_id, booking_date, booking_time, service_type, status)
        VALUES ($1, $2, $3, $4, 'pending')
@@ -310,7 +322,7 @@ app.post('/api/create-payment-intent', authenticateToken, async (req, res) => {
     );
     const newBooking = bookingResult.rows[0];
 
-    // If pet_id provided, insert into booking_pets join table
+    // If pet_id is provided, insert into join table
     if (pet_id) {
       await pool.query(
         `INSERT INTO booking_pets (booking_id, pet_id) VALUES ($1, $2)`,
@@ -341,7 +353,7 @@ app.post('/api/create-payment-intent', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/payments/confirm - Confirm final payment in DB after successful Stripe payment
+// POST /api/payments/confirm - Record final payment in the database after successful payment
 app.post('/api/payments/confirm', authenticateToken, async (req, res) => {
   try {
     const { bookingId, amount } = req.body;
@@ -353,7 +365,7 @@ app.post('/api/payments/confirm', authenticateToken, async (req, res) => {
     );
     const paymentRecord = result.rows[0];
 
-    // Optionally, update booking status to 'confirmed'
+    // Optionally, update booking status to 'confirmed' here.
     // await pool.query(`UPDATE bookings SET status = 'confirmed' WHERE id = $1`, [bookingId]);
 
     res.json({ message: 'Payment recorded', payment: paymentRecord });

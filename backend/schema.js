@@ -9,6 +9,7 @@ const recreateTables = async () => {
     await pool.query(`DROP TABLE IF EXISTS booking_pets CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS bookings CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS staff_availability CASCADE;`);
+    await pool.query(`DROP TABLE IF EXISTS pet_images CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS pets CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS clients CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS staff CASCADE;`);
@@ -40,7 +41,11 @@ const recreateTables = async () => {
         pet_name VARCHAR(100) NOT NULL,
         breed VARCHAR(100),
         size VARCHAR(50),
-        notes TEXT,
+        about TEXT,              -- Additional field for "About"
+        socialization TEXT,      -- Additional field for "Socialization"
+        care TEXT,               -- Additional field for "Care"
+        health TEXT,             -- Additional field for "Health"
+        notes TEXT,              -- Existing notes field
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -96,6 +101,14 @@ const recreateTables = async () => {
         message TEXT NOT NULL,
         type VARCHAR(50),         -- e.g., 'booking', 'review', 'availability'
         is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS pet_images (
+        id SERIAL PRIMARY KEY,
+        pet_id INT REFERENCES pets(id) ON DELETE CASCADE,
+        image_url TEXT NOT NULL,
+        is_main BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
