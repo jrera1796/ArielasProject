@@ -64,6 +64,7 @@ function App() {
         <Route path="settings" element={<ClientSettings />} />
         <Route path="notifications" element={<ClientNotifications />} />
         <Route path="manage-pets" element={<ManagePets />} />
+        <Route path="/client/pet/:petId" element={<PetProfile />} />
       </Route>
     </Routes>
   );
