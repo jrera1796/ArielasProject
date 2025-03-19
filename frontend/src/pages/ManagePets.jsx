@@ -17,6 +17,7 @@ const ManagePets = () => {
   });
   const [error, setError] = useState('');
   const [editingPet, setEditingPet] = useState(null);
+  const [showForm, setShowForm] = useState(false);
   const navigate = useNavigate();
 
   // Fetch existing pets on mount
@@ -65,6 +66,7 @@ const ManagePets = () => {
       }
       const newPet = await res.json();
       setPets([...pets, newPet]);
+      // Reset the form and hide it
       setPetForm({
         pet_name: '',
         breed: '',
@@ -75,6 +77,7 @@ const ManagePets = () => {
         health: '',
         notes: ''
       });
+      setShowForm(false);
     } catch (err) {
       setError(err.message);
     }
@@ -100,7 +103,7 @@ const ManagePets = () => {
     }
   };
 
-  // Begin editing a pet
+  // Begin editing a pet (also toggles the form view)
   const handleEditPet = (pet) => {
     setEditingPet(pet);
     setPetForm({
@@ -113,6 +116,7 @@ const ManagePets = () => {
       health: pet.health || '',
       notes: pet.notes || ''
     });
+    setShowForm(true);
   };
 
   // Update an existing pet
@@ -135,7 +139,7 @@ const ManagePets = () => {
       }
       const updatedPet = await res.json();
       setPets(pets.map(p => (p.id === updatedPet.id ? updatedPet : p)));
-      // Clear editing state
+      // Clear editing state and hide form
       setEditingPet(null);
       setPetForm({
         pet_name: '',
@@ -147,6 +151,7 @@ const ManagePets = () => {
         health: '',
         notes: ''
       });
+      setShowForm(false);
     } catch (err) {
       setError(err.message);
     }
@@ -157,84 +162,93 @@ const ManagePets = () => {
       <h2>Manage Your Pets</h2>
       {error && <p className="error-msg">{error}</p>}
 
-      {/* Show add/edit form */}
-      {editingPet ? (
-        <form className="pet-form" onSubmit={handleUpdatePet}>
-          <h3>Edit Pet</h3>
+      {/* Toggle button to show/hide the add pet form */}
+      {!showForm && (
+        <button className="toggle-form-btn" onClick={() => setShowForm(true)}>
+          Add New Pet
+        </button>
+      )}
+
+      {/* Add / Edit Form */}
+      {showForm && (
+        <form className="pet-form" onSubmit={editingPet ? handleUpdatePet : handleAddPet}>
+          <h3>{editingPet ? 'Edit Pet' : 'Add a New Pet'}</h3>
           <div className="form-group">
             <label>Pet Name</label>
-            <input type="text" name="pet_name" value={petForm.pet_name} onChange={handleInputChange} required />
+            <input
+              type="text"
+              name="pet_name"
+              value={petForm.pet_name}
+              onChange={handleInputChange}
+              required
+            />
           </div>
           <div className="form-group">
             <label>Breed</label>
-            <input type="text" name="breed" value={petForm.breed} onChange={handleInputChange} />
+            <input
+              type="text"
+              name="breed"
+              value={petForm.breed}
+              onChange={handleInputChange}
+            />
           </div>
           <div className="form-group">
             <label>Size</label>
-            <input type="text" name="size" value={petForm.size} onChange={handleInputChange} />
+            <input
+              type="text"
+              name="size"
+              value={petForm.size}
+              onChange={handleInputChange}
+            />
           </div>
           <div className="form-group">
             <label>About</label>
-            <textarea name="about" value={petForm.about} onChange={handleInputChange} />
+            <textarea
+              name="about"
+              value={petForm.about}
+              onChange={handleInputChange}
+            />
           </div>
           <div className="form-group">
             <label>Socialization</label>
-            <textarea name="socialization" value={petForm.socialization} onChange={handleInputChange} />
+            <textarea
+              name="socialization"
+              value={petForm.socialization}
+              onChange={handleInputChange}
+            />
           </div>
           <div className="form-group">
             <label>Care</label>
-            <textarea name="care" value={petForm.care} onChange={handleInputChange} />
+            <textarea
+              name="care"
+              value={petForm.care}
+              onChange={handleInputChange}
+            />
           </div>
           <div className="form-group">
             <label>Health</label>
-            <textarea name="health" value={petForm.health} onChange={handleInputChange} />
+            <textarea
+              name="health"
+              value={petForm.health}
+              onChange={handleInputChange}
+            />
           </div>
           <div className="form-group">
             <label>Notes</label>
-            <textarea name="notes" value={petForm.notes} onChange={handleInputChange} />
+            <textarea
+              name="notes"
+              value={petForm.notes}
+              onChange={handleInputChange}
+            />
           </div>
-          <button type="submit">Update Pet</button>
-          <button type="button" onClick={() => setEditingPet(null)}>Cancel</button>
-        </form>
-      ) : (
-        <form className="pet-form" onSubmit={handleAddPet}>
-          <h3>Add a New Pet</h3>
-          <div className="form-group">
-            <label>Pet Name</label>
-            <input type="text" name="pet_name" value={petForm.pet_name} onChange={handleInputChange} required />
-          </div>
-          <div className="form-group">
-            <label>Breed</label>
-            <input type="text" name="breed" value={petForm.breed} onChange={handleInputChange} />
-          </div>
-          <div className="form-group">
-            <label>Size</label>
-            <input type="text" name="size" value={petForm.size} onChange={handleInputChange} />
-          </div>
-          <div className="form-group">
-            <label>About</label>
-            <textarea name="about" value={petForm.about} onChange={handleInputChange} />
-          </div>
-          <div className="form-group">
-            <label>Socialization</label>
-            <textarea name="socialization" value={petForm.socialization} onChange={handleInputChange} />
-          </div>
-          <div className="form-group">
-            <label>Care</label>
-            <textarea name="care" value={petForm.care} onChange={handleInputChange} />
-          </div>
-          <div className="form-group">
-            <label>Health</label>
-            <textarea name="health" value={petForm.health} onChange={handleInputChange} />
-          </div>
-          <div className="form-group">
-            <label>Notes</label>
-            <textarea name="notes" value={petForm.notes} onChange={handleInputChange} />
-          </div>
-          <button type="submit">Add Pet</button>
+          <button type="submit">{editingPet ? 'Update Pet' : 'Add Pet'}</button>
+          <button type="button" onClick={() => { setEditingPet(null); setShowForm(false); }}>
+            Cancel
+          </button>
         </form>
       )}
 
+      {/* Pet List */}
       <h3>Your Pets</h3>
       {pets.length === 0 ? (
         <p>No pets found. Add one above!</p>

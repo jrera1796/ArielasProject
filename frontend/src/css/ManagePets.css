@@ -1,3 +1,4 @@
+/* ManagePets.css */
 .manage-pets-container {
   padding: 1rem;
   font-family: Arial, sans-serif;
@@ -16,18 +17,20 @@
   background-color: #f7f7f7;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 0.75rem;
+.toggle-form-btn {
+  background-color: #27ae60;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 1rem;
 }
 
-.form-group label {
-  font-weight: bold;
-  margin-bottom: 0.25rem;
+.toggle-form-btn:hover {
+  background-color: #1e8449;
 }
 
-/* Update pet-list to display as a flex container with wrapping */
 .pet-list {
   list-style: none;
   padding: 0;
@@ -36,27 +39,25 @@
   gap: 1rem;
 }
 
-/* Each pet item now shows a background image if available, with a semi-transparent overlay */
 .pet-item {
   position: relative;
-  width: 300px;
+  width: calc(33.33% - 1rem);
+  min-width: 250px;
   height: 200px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background-color: #fff;
   background-size: cover;
   background-position: center;
+  border: 1px solid #ddd;
+  border-radius: 8px;
   overflow: hidden;
 }
 
-/* The overlay ensures text remains readable over the background image */
 .pet-overlay {
+  background-color: rgba(255, 255, 255, 0.75);
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.7); /* semi-transparent white overlay */
   padding: 0.5rem;
   display: flex;
   flex-direction: column;
@@ -64,15 +65,13 @@
 }
 
 .pet-info {
-  z-index: 1;
-  /* You can add text-shadow if needed for extra readability */
+  font-size: 0.9rem;
+  color: #333;
 }
 
 .pet-actions {
   display: flex;
-  flex-direction: column;
   gap: 0.5rem;
-  z-index: 1;
 }
 
 .pet-actions button {
@@ -82,7 +81,7 @@
   padding: 0.4rem 0.75rem;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .pet-actions button:hover {
