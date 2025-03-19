@@ -1,0 +1,31 @@
+/* PetProfile.css */
+
+.pet-profile-container {
+  padding: 1rem;
+  font-family: Arial, sans-serif;
+  background-color: #fff;
+  color: #333;
+}
+
+.pet-profile-container h2 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.pet-profile-container p {
+  margin: 0.5rem 0;
+  line-height: 1.4;
+}
+
+.pet-images {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pet-images img {
+  max-width: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+}
