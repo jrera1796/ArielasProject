@@ -20,25 +20,50 @@ const ManagePets = () => {
   const [showForm, setShowForm] = useState(false);
   const navigate = useNavigate();
 
-  // Fetch existing pets on mount
+  // Fetch existing pets on mount and then fetch images for each pet
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     if (!token) {
       navigate('/login');
       return;
     }
-    fetch('/api/pets', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-      .then(res => {
+    const fetchPets = async () => {
+      try {
+        const res = await fetch('/api/pets', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         if (!res.ok) throw new Error('Failed to fetch pets');
-        return res.json();
-      })
-      .then(data => setPets(data))
-      .catch(err => setError(err.message));
+        const petData = await res.json();
+        // Now, for each pet, fetch its images
+        const petsWithImages = await Promise.all(
+          petData.map(async (pet) => {
+            try {
+              const imgRes = await fetch(`/api/pet-images?pet_id=${pet.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              if (imgRes.ok) {
+                const imagesData = await imgRes.json();
+                // Use the image marked as main if available, else the first image, else null
+                const mainImg = Array.isArray(imagesData) && imagesData.length > 0
+                  ? imagesData.find(img => img.is_main)?.image_url || imagesData[0].image_url
+                  : null;
+                return { ...pet, main_image_url: mainImg };
+              }
+            } catch (imgErr) {
+              console.error(`Error fetching images for pet ${pet.id}:`, imgErr);
+            }
+            return pet; // return pet as is if images can't be fetched
+          })
+        );
+        setPets(petsWithImages);
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+    fetchPets();
   }, [navigate]);
 
   // Handle input changes
@@ -65,8 +90,8 @@ const ManagePets = () => {
         throw new Error(data.error || 'Failed to add pet');
       }
       const newPet = await res.json();
+      // Optionally, fetch images for the new pet here if needed.
       setPets([...pets, newPet]);
-      // Reset the form and hide it
       setPetForm({
         pet_name: '',
         breed: '',
@@ -84,40 +109,40 @@ const ManagePets = () => {
   };
 
   // Delete a pet
-  const handleDeletePet = async (petId) => {
-    const token = localStorage.getItem('authToken');
-    try {
-      const res = await fetch(`/api/pets/${petId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to delete pet');
-      }
-      setPets(pets.filter(pet => pet.id !== petId));
-    } catch (err) {
-      setError(err.message);
-    }
-  };
+  // const handleDeletePet = async (petId) => {
+  //   const token = localStorage.getItem('authToken');
+  //   try {
+  //     const res = await fetch(`/api/pets/${petId}`, {
+  //       method: 'DELETE',
+  //       headers: {
+  //         'Authorization': `Bearer ${token}`
+  //       }
+  //     });
+  //     if (!res.ok) {
+  //       const data = await res.json();
+  //       throw new Error(data.error || 'Failed to delete pet');
+  //     }
+  //     setPets(pets.filter(pet => pet.id !== petId));
+  //   } catch (err) {
+  //     setError(err.message);
+  //   }
+  // };
 
-  // Begin editing a pet (also toggles the form view)
-  const handleEditPet = (pet) => {
-    setEditingPet(pet);
-    setPetForm({
-      pet_name: pet.pet_name,
-      breed: pet.breed || '',
-      size: pet.size || '',
-      about: pet.about || '',
-      socialization: pet.socialization || '',
-      care: pet.care || '',
-      health: pet.health || '',
-      notes: pet.notes || ''
-    });
-    setShowForm(true);
-  };
+  // Begin editing a pet (toggles the form view)
+  // const handleEditPet = (pet) => {
+  //   setEditingPet(pet);
+  //   setPetForm({
+  //     pet_name: pet.pet_name,
+  //     breed: pet.breed || '',
+  //     size: pet.size || '',
+  //     about: pet.about || '',
+  //     socialization: pet.socialization || '',
+  //     care: pet.care || '',
+  //     health: pet.health || '',
+  //     notes: pet.notes || ''
+  //   });
+  //   setShowForm(true);
+  // };
 
   // Update an existing pet
   const handleUpdatePet = async (e) => {
@@ -139,7 +164,6 @@ const ManagePets = () => {
       }
       const updatedPet = await res.json();
       setPets(pets.map(p => (p.id === updatedPet.id ? updatedPet : p)));
-      // Clear editing state and hide form
       setEditingPet(null);
       setPetForm({
         pet_name: '',
@@ -255,30 +279,29 @@ const ManagePets = () => {
       ) : (
         <ul className="pet-list">
           {pets.map((pet) => (
-            <li 
-              key={pet.id} 
-              className="pet-item" 
-              style={pet.main_image_url ? { backgroundImage: `url(${pet.main_image_url})` } : {}}
+            <li
+              key={pet.id}
+              className="pet-item"
+              onClick={() => navigate(`/client/pet/${pet.id}`)}
             >
-              <div className="pet-overlay">
-                <div className="pet-info">
-                  <strong>{pet.pet_name}</strong> ({pet.breed || 'Unknown Breed'})
-                  <div>Size: {pet.size || 'N/A'}</div>
-                  {pet.notes && <div>Notes: {pet.notes}</div>}
-                  {pet.about && <div>About: {pet.about}</div>}
-                  {pet.socialization && <div>Socialization: {pet.socialization}</div>}
-                  {pet.care && <div>Care: {pet.care}</div>}
-                  {pet.health && <div>Health: {pet.health}</div>}
-                </div>
-                <div className="pet-actions">
-                  <button onClick={() => handleEditPet(pet)}>Edit</button>
-                  <button onClick={() => handleDeletePet(pet.id)}>Delete</button>
-                  <button onClick={() => navigate(`/client/pet/${pet.id}`)}>View Profile</button>
+              <div className="pet-image-container">
+                {pet.main_image_url ? (
+                  <img
+                    src={pet.main_image_url}
+                    alt={pet.pet_name}
+                    className="pet-card-image"
+                  />
+                ) : (
+                  <div className="pet-no-image">No Image</div>
+                )}
+                <div className="pet-name-overlay">
+                  {pet.pet_name}
                 </div>
               </div>
             </li>
           ))}
         </ul>
+
       )}
     </div>
   );

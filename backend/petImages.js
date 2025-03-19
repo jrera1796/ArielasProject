@@ -3,7 +3,6 @@ const router = express.Router();
 const multer = require('multer');
 const multerS3 = require('multer-s3-v3');
 const { S3Client } = require('@aws-sdk/client-s3');
-const { Pool } = require('pg');
 const { authenticateToken } = require('./authMiddleware'); // your auth middleware
 const pool = require('./db'); // your pool configuration
 
@@ -21,7 +20,6 @@ const upload = multer({
   storage: multerS3({
     s3: s3,
     bucket: process.env.AWS_BUCKET_NAME,
-    acl: 'public-read',
     key: function (req, file, cb) {
       cb(null, `pets/${Date.now()}_${file.originalname}`);
     }

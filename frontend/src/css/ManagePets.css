@@ -1,4 +1,3 @@
-/* ManagePets.css */
 .manage-pets-container {
   padding: 1rem;
   font-family: Arial, sans-serif;
@@ -31,47 +30,71 @@
   background-color: #1e8449;
 }
 
+/* Make the pet list flexible and mobile friendly */
 .pet-list {
   list-style: none;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
+  justify-content: center;
 }
 
+/* Each pet item now takes up about 50% of the container minus the gap */
 .pet-item {
-  position: relative;
-  width: calc(33.33% - 1rem);
-  min-width: 250px;
+  flex: 1 1 calc(50% - 1rem);
+  max-width: calc(50% - 1rem);
   height: 200px;
-  background-size: cover;
-  background-position: center;
   border: 1px solid #ddd;
   border-radius: 8px;
   overflow: hidden;
-}
-
-.pet-overlay {
-  background-color: rgba(255, 255, 255, 0.75);
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 0.5rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
 }
 
-.pet-info {
-  font-size: 0.9rem;
-  color: #333;
+.pet-image-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: pointer;
 }
+
+.pet-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pet-no-image {
+  width: 100%;
+  height: 100%;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+/* New overlay merged into the image container */
+.pet-name-overlay {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.6); /* semi-transparent background */
+  color: #fff;
+  text-align: center;
+  padding: 0.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
 
 .pet-actions {
   display: flex;
-  gap: 0.5rem;
+  justify-content: space-around;
+  padding: 0.5rem;
 }
 
 .pet-actions button {

@@ -184,6 +184,24 @@ app.post('/api/pets', authenticateToken, async (req, res) => {
   }
 });
 
+app.get('/api/pets/:petId', authenticateToken, async (req, res) => {
+  const { petId } = req.params;
+  try {
+    const clientId = req.user.id;
+    // Query to fetch the pet details belonging to the authenticated user
+    const result = await pool.query(
+      'SELECT * FROM pets WHERE id = $1 AND client_id = $2',
+      [petId, clientId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Pet not found or not authorized.' });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.put('/api/pets/:petId', authenticateToken, async (req, res) => {
   const { petId } = req.params;
   const { pet_name, breed, size, notes } = req.body;

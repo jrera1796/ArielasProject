@@ -1,31 +1,234 @@
-/* PetProfile.css */
-
-.pet-profile-container {
-  padding: 1rem;
-  font-family: Arial, sans-serif;
-  background-color: #fff;
+/* Container card */
+.pet-profile-card {
+  max-width: 420px;
+  margin: 2rem auto;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  overflow: hidden;
+  font-family: sans-serif;
   color: #333;
+  position: relative;
 }
 
-.pet-profile-container h2 {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
+/* Back button at the top-left corner */
+.back-button {
+  top: 1rem;
+  left: 1rem;
+  background: transparent;
+  border: none;
+  color: #333;
+  font-size: 1.2rem;
+  cursor: pointer;
+  z-index: 10;
 }
 
-.pet-profile-container p {
-  margin: 0.5rem 0;
-  line-height: 1.4;
+/* Hero section */
+.pet-profile-hero {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  background: #f0f0f0;
+  overflow: hidden;
 }
 
-.pet-images {
-  margin-top: 1rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.pet-images img {
-  max-width: 100%;
-  border-radius: 8px;
+.pet-hero-image {
+  width: 100%;
+  height: 220px;
   object-fit: cover;
 }
+
+.placeholder-image {
+  opacity: 0.3; /* slight transparency for placeholder */
+}
+
+/* Overlay for name, breed, size */
+.pet-hero-overlay {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+
+.pet-name {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.pet-breed-size {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* Error message */
+.error-msg {
+  color: #c00;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  justify-content: space-around;
+  margin: 1rem 0 0.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.tabs button {
+  background: none;
+  border: none;
+  padding: 0.5rem 0;
+  font-size: 1rem;
+  cursor: pointer;
+  width: 33.3%;
+  color: #555;
+}
+
+.tabs button.active {
+  border-bottom: 3px solid #007bff;
+  color: #007bff;
+}
+
+/* Tab content */
+.tab-content {
+  padding: 0 1.5rem 1.5rem;
+}
+
+/* Gallery grid */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.gallery-image {
+  width: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+  height: 80px;
+}
+
+.gallery-image.main-photo {
+  border: 2px solid #007bff;
+}
+
+/* Gallery Upload Form */
+.gallery-upload-form {
+  margin-top: 1.5rem;
+  padding: 0.5rem;
+  background: #f7f7f7;
+  border-radius: 8px;
+}
+
+.gallery-upload-form h4 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.file-label {
+  position: relative;
+  background: #007bff;
+  color: #fff;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  margin-right: 0.5rem;
+  overflow: hidden;
+}
+
+.file-label span {
+  display: inline-block;
+}
+
+.file-label input[type="file"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.checkbox-label {
+  margin-right: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.upload-button {
+  background: #28a745;
+  color: #fff;
+  border: none;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.upload-button:hover {
+  background: #218838;
+}
+/* Gallery Upload Container (above tab-content, visible only on Gallery tab) */
+.gallery-upload-container {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.add-photos-button {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.add-photos-button:hover {
+  background: #0062cc;
+}
+
+/* Modal (full-screen gallery view) */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-image {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+}
+
+.modal-prev,
+.modal-next {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 1rem;
+  user-select: none;
+}
+
+.modal-prev:hover,
+.modal-next:hover {
+  color: #ccc;
+}
+
+/* (Existing CSS for hero, tabs, etc. remains unchanged) */
